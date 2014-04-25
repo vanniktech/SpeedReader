@@ -1,0 +1,46 @@
+# C++ objects and libs
+
+*.slo
+*.lo
+*.o
+*.a
+*.la
+*.lai
+*.so.*
+*.so
+*.dll
+*.dylib
+
+# Qt-es
+
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+qrc_*.cpp
+ui_*.h
+Makefile*
+*-build-*
+/build-*/*
+
+# QtCreator
+
+*.autosave
+
+# Mac
+.DS_STORE
+*.plist
+*.lproj
+PkgInfo
+*/SpeedReader.app/Contents/Frameworks/*
+
+# Failed patch
+*.orig
+*.rej
+
+# Unknown
+.obj
+*.moc
+*.Debug
+*.Release
+
+demo/

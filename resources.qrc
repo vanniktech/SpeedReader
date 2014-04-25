@@ -1,0 +1,10 @@
+<RCC>
+    <qresource prefix="/">
+        <file>languages/de.qm</file>
+        <file>languages/en.qm</file>
+        <file>languages/de.png</file>
+        <file>languages/en.png</file>
+        <file>icon.png</file>
+        <file>images/refresh.png</file>
+    </qresource>
+</RCC>
