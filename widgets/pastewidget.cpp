@@ -24,6 +24,7 @@ PasteWidget::PasteWidget(const QString coSiteDonate) : QWidget() {
     mCoSiteDonate = coSiteDonate;
 
     QVBoxLayout* vBoxLayout = new QVBoxLayout();
+    vBoxLayout->setContentsMargins(0,0,0,0);
 
     mPlainTextEdit = new QPlainTextEdit();
     vBoxLayout->addWidget(mPlainTextEdit);
