@@ -75,7 +75,6 @@
    <addaction name="menuSettings"/>
    <addaction name="menuAbout"/>
   </widget>
-  <widget class="QStatusBar" name="statusBar"/>
   <action name="actionSpeedReader">
    <property name="text">
     <string>SpeedReader</string>
