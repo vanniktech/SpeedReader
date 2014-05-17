@@ -17,25 +17,35 @@
     along with VNTRSSReader. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef VNTRSSITEM_H
-#define VNTRSSITEM_H
+#ifndef VNTRSSCOMMON_H
+#define VNTRSSCOMMON_H
 
 #include <QString>
+#include <QImage>
+#include <QUrl>
 
-#include "lib/VNTRSSReader/vntrsscommon.h"
-
-class VNTRSSItem : public VNTRSSCommon {
+class VNTRSSCommon {
 public:
-    VNTRSSItem(QString link, QString title, QString description, QString pubDate, QString category, QString guid, QString imageUrl);
+    VNTRSSCommon(QString title, QString description, QString pubDate, QUrl link, QUrl imageUrl);
 
-    QString getGuid() const;
-    QString getCategory() const;
+    QString getTitle() const;
+    QString getDescription() const;
+    QString getPlainDescription();
+    QString getPubDate() const;
+    QUrl getLink() const;
+    QUrl getImageUrl() const;
+    QImage getImage() const;
+    void setImage(const QImage &value);
 
     QString toString() const;
 
-private:
-    QString mGuid;
-    QString mCategory;
+protected:
+    QString mTitle;
+    QString mDescription;
+    QString mPubDate;
+    QUrl    mLink;
+    QUrl    mImageUrl;
+    QImage  mImage;
 };
 
-#endif // VNTRSSITEM_H
+#endif // VNTRSSCOMMON_H

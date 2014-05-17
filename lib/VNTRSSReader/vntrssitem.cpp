@@ -17,17 +17,13 @@
     along with VNTRSSReader. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "vntrssitem.h"
-
 #include <QRegExp>
 
-VNTRSSItem::VNTRSSItem(QString link, QString title, QString description, QString pubDate, QString category, QString guid, QString imageUrl) {
-    mLink = link.trimmed();
-    mTitle = title.simplified();
-    mDescription = description.simplified();
-    mPubDate = pubDate.trimmed();
+#include "vntrssitem.h"
+
+VNTRSSItem::VNTRSSItem(QString link, QString title, QString description, QString pubDate, QString category, QString guid, QString imageUrl) : VNTRSSCommon(title, description, pubDate, link, QUrl()){
     mCategory = category.simplified();
-    mGuid = guid;
+    mGuid = guid.simplified();
 
     if (imageUrl.isNull()) {
         QRegExp imageRegex("src=\"(http://|https://)(www)?[a-zA-Z0-9\\+\\$\\=\\%\\^\\&\\!\\-\\#\\_\\?./]+\"");
@@ -38,41 +34,14 @@ VNTRSSItem::VNTRSSItem(QString link, QString title, QString description, QString
     mImageUrl = QUrl(imageUrl);
 }
 
-VNTRSSItem::~VNTRSSItem() {
-}
-
-QString VNTRSSItem::getTitle() {
-    return mTitle;
-}
-
-QString VNTRSSItem::getDescription() {
-    return mDescription;
-}
-
-QString VNTRSSItem::getPlainDescription() {
-    return mDescription.remove(QRegExp("<[^>]*>")).simplified();
-}
-
-QString VNTRSSItem::getLink() {
-    return mLink;
-}
-
-QString VNTRSSItem::getGuid() {
+QString VNTRSSItem::getGuid() const {
     return mGuid;
 }
 
-QString VNTRSSItem::getCategory() {
+QString VNTRSSItem::getCategory() const {
     return mCategory;
 }
 
-QString VNTRSSItem::getPubDate() {
-    return mPubDate;
-}
-
-QUrl    VNTRSSItem::getImageUrl() {
-    return mImageUrl;
-}
-
-QString VNTRSSItem::toString() {
-    return QString("link=%1\ntitle=%2\ndescription=%3\npubDate=%4\ncategory=%5\nguid=%6\nimageUrl=%7").arg(mLink, mTitle, mDescription, mPubDate, mCategory, mGuid, mImageUrl.toString());
+QString VNTRSSItem::toString() const {
+    return VNTRSSCommon::toString().append(QString("category=%1\nguid=%2").arg(mCategory, mGuid));
 }

@@ -19,57 +19,42 @@
 
 #include "vntrsschannel.h"
 
-VNTRSSChannel::VNTRSSChannel(QString link, QString title, QString description, QString pubdate, QString language, QString copyright, QString imageUrl, QUrl rssUrl, QList<VNTRSSItem> items) {
-    mLink = QUrl(link);
-    mTitle = title.simplified();
-    mDescription = description.simplified();
-    mPubDate = pubdate;
-    mLanguage = language;
+VNTRSSChannel::VNTRSSChannel(QString link, QString title, QString description, QString pubdate, QString language, QString copyright, QString imageUrl, QUrl rssUrl, QString errorMessage, QList<VNTRSSItem*> items) : VNTRSSCommon(title, description, pubdate, link, imageUrl) {
+    mLanguage = language.simplified();
     mCopyright = copyright.simplified();
-    mImageUrl = QUrl(imageUrl);
     mRSSUrl = rssUrl;
+    mErrorMessage = errorMessage;
     mItems = items;
 }
 
 VNTRSSChannel::~VNTRSSChannel() {
+    foreach (VNTRSSItem* item, mItems) delete item;
 }
 
-QString VNTRSSChannel::getTitle() {
-    return mTitle;
-}
-
-QString VNTRSSChannel::getDescription() {
-    return mDescription;
-}
-
-QUrl VNTRSSChannel::getLink() {
-    return mLink;
-}
-
-QString VNTRSSChannel::getPubDate() {
-    return mPubDate;
-}
-
-QString VNTRSSChannel::getLanguage() {
+QString VNTRSSChannel::getLanguage() const {
     return mLanguage;
 }
 
-QString VNTRSSChannel::getCopyright() {
+QString VNTRSSChannel::getCopyright() const {
     return mCopyright;
 }
 
-QUrl    VNTRSSChannel::getImageUrl() {
-    return mImageUrl;
-}
-
-QUrl    VNTRSSChannel::getRSSUrl() {
+QUrl    VNTRSSChannel::getRSSUrl() const {
     return mRSSUrl;
 }
 
-QList<VNTRSSItem> VNTRSSChannel::getItems() {
+QString VNTRSSChannel::getErrorMessage() const {
+    return mErrorMessage;
+}
+
+bool    VNTRSSChannel::hasError() const {
+    return !mErrorMessage.isEmpty();
+}
+
+QList<VNTRSSItem*> VNTRSSChannel::getItems() const {
     return mItems;
 }
 
-QString VNTRSSChannel::toString() {
-    return QString("link=%1\ntitle=%2\ndescription=%3\npubDate=%4\nlanguage=%5\ncopyright=%6\nrssUrl=%7").arg(mLink.toString(), mTitle, mDescription, mPubDate, mLanguage, mCopyright, mRSSUrl.toString());
+QString VNTRSSChannel::toString() const {
+    return VNTRSSCommon::toString().append(QString("language=%1\ncopyright=%2\nrssurl=%3\nerrormessage=%4").arg(mLanguage, mCopyright, mRSSUrl.toString(), mErrorMessage));
 }

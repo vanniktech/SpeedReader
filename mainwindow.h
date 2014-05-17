@@ -25,15 +25,13 @@
 #include <QClipboard>
 #include <QNetworkReply>
 #include <QTranslator>
+#include <QListWidgetItem>
+#include <QSignalMapper>
+#include <QPixmap>
 
 #include <settingswindow.h>
 #include "settings.h"
 #include "speedreadertext.h"
-
-#include "widgets/pastewidget.h"
-#include "widgets/readwidget.h"
-#include "widgets/statuswidget.h"
-#include "widgets/rsswidget.h"
 
 #include <QNetworkAccessManager>
 
@@ -49,13 +47,13 @@ class MainWindow : public QMainWindow {
 public:
     explicit MainWindow(QWidget* parent = 0);
     ~MainWindow();
-    void setReadWidgetText(QString text);
+    void setReadingText(QString text);
 
 public slots:
     void changed(QString text, int readTextInPercent, SpeedReaderText::SpeedReaderStatus status);
 
-    void pasteWidgetGoButtonClicked();
-    void pasteWidgetReadButtonClicked();
+    void on_readButton_clicked();
+    void on_goButton_clicked();
 
 protected:
     void changeEvent(QEvent*);
@@ -67,12 +65,12 @@ private slots:
     void changedSlot(QClipboard::Mode mode);
     void replyFinished(QNetworkReply* networkReply);
 
-    void pasteWidgetShowRSSCheckBoxClicked(bool clicked);
-
-    void rssListItemPressed(QString text);
-
-    void readWidgetStartStopButtonClicked();
-    void readWidgetCancelButtonClicked();
+    void updatedSettings();
+    void itemClickedTimeout();
+    void checkBoxClicked(QString id);
+    void rssWebViewDialogReadSelectedText(QString text);
+    void rssWebViewDialogGoSelectedText(QString text);
+    void loadedRSS(QList<VNTRSSChannel*> rssChannels);
 
     void on_actionCheckForUpdates_triggered();
     void on_actionDonate_triggered();
@@ -80,18 +78,18 @@ private slots:
     void on_actionSendFeedback_triggered();
     void on_actionSpeedReader_triggered();
     void on_actionAboutSpeedReader_triggered();
-
-    void updatedSettings();
-
     void on_actionForkMeOnGitHub_triggered();
 
-private:
-    PasteWidget*    mPasteWidget;
-    ReadWidget*     mReadWidget;
-    StatusWidget*   mStatusWidget;
-    RSSWidget*      mRSSWidget;
+    void on_startStopButton_clicked();
+    void on_cancelButton_clicked();
+    void on_addRSSUrlButton_clicked();
+    void on_refreshAllButton_clicked();
+    void on_showRSSCheckBox_clicked(bool checked);
+    void on_rssListWidget_itemClicked(QListWidgetItem* listWidgetItem);
+    void on_rssListWidget_itemDoubleClicked(QListWidgetItem* listWidgetItem);
 
-    SpeedReaderText*            mSpeedReaderText;
+private:
+    SpeedReaderText* mSpeedReaderText;
     Settings*        mSettings;
     SettingsWindow*  mSettingsWindow;
 
@@ -100,16 +98,31 @@ private:
 
     QNetworkAccessManager* mNetworkAccessManager;
 
-    void updateReadWidgetLabel();
+    void updateStatusWidget();
+    void updateReadLabel();
     void updateSpeedReaderText(QString text);
 
+    // RSS
+    QPixmap mRefreshPixmap;
+    QListWidgetItem* mSingleClickedItem;
+    bool mDoubleClicked;
+
+    QSignalMapper* mCheckBoxSignalMapper;
+    QMultiMap<QString, QListWidgetItem*> mIdListWidgetItemMultiMap;
+
+    VNTRSSReader*   mRSSReader;
+
+    void refreshRSSFeeds();
+    void addRSSFeedDefaultEntry();
+    QListWidgetItem* getListWidgetItem(QString title, QString description, QUrl url, QIcon icon);
+    void addListWidgetItem(QString key, QString title, QString description, QUrl url, QImage image);
+
     // Language
-    QTranslator     mTranslator;
-    QString         mCurrLang;
+    QTranslator mTranslator;
+    QString     mCurrLang;
 
     void loadLanguage(const QString& language);
     void createLanguageMenu();
-    void retranslateWidgets();
 };
 
 #endif // MAINWINDOW_H

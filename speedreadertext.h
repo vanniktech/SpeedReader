@@ -24,6 +24,8 @@
 #include <QString>
 #include <QThread>
 
+#include "speedreadersegment.h"
+
 class SpeedReaderText : public QThread {
     Q_OBJECT
 
@@ -55,12 +57,13 @@ class SpeedReaderText : public QThread {
 
     private:
         QString mText;
-        QList<QString> mDissectText;
+        QList<SpeedReaderSegment> mDissectText;
 
+        bool    mReading;
         int     mIndex;
         int     mStopWordsRead;
-        bool    mReading;
         int     mStopWordsCount;
+        int     mEstimatedTimeInMS;
 
         void dissectText();
 

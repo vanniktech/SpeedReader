@@ -24,37 +24,30 @@
 #include <QList>
 #include <QUrl>
 
-#include <lib/VNTRSSReader/vntrssitem.h>
+#include "lib/VNTRSSReader/vntrssitem.h"
+#include "lib/VNTRSSReader/vntrsscommon.h"
 
-class VNTRSSChannel
-{
+class VNTRSSChannel : public VNTRSSCommon {
 public:
-    VNTRSSChannel(QString link, QString title, QString description, QString pubdate, QString language, QString copyright, QString imageUrl, QUrl rssUrl, QList<VNTRSSItem> items);
+    VNTRSSChannel(QString link, QString title, QString description, QString pubdate, QString language, QString copyright, QString imageUrl, QUrl rssUrl, QString errorMessage, QList<VNTRSSItem*> items);
     ~VNTRSSChannel();
 
-    QString getTitle();
-    QString getDescription();
-    QUrl     getLink();
-    QString getPubDate();
-    QString getLanguage();
-    QString getCopyright();
-    QUrl    getImageUrl();
-    QUrl    getRSSUrl();
+    QString getLanguage() const;
+    QString getCopyright() const;
+    QUrl    getRSSUrl() const;
+    QString getErrorMessage() const;
+    bool    hasError() const;
 
-    QList<VNTRSSItem> getItems();
+    QList<VNTRSSItem *> getItems() const;
 
-    QString toString();
+    QString toString() const;
 
 private:
-    QUrl    mLink;
-    QString mTitle;
-    QString mDescription;
-    QString mPubDate;
     QString mLanguage;
     QString mCopyright;
-    QUrl    mImageUrl;
     QUrl    mRSSUrl;
-    QList<VNTRSSItem> mItems;
+    QString mErrorMessage;
+    QList<VNTRSSItem*> mItems;
 };
 
 #endif // VNTRSSCHANNEL_H

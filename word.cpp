@@ -22,12 +22,13 @@
 Word::Word() {
 }
 
-Word::Word(QString word, bool stopWord, bool breakWord) {
+Word::Word(QString word, bool stopWord, bool breakWord, int delayWord) {
     this->word = word;
     this->stopWord = stopWord;
     this->breakWord = breakWord;
+    this->delayWord = delayWord;
 }
 
 bool Word::equals(Word word) {
-    return word.word == this->word && word.stopWord == this->stopWord && word.breakWord == this->breakWord;
+    return word.word == this->word && word.stopWord == this->stopWord && word.breakWord == this->breakWord && word.delayWord == this->delayWord;
 }

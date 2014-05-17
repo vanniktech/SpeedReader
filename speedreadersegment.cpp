@@ -17,24 +17,22 @@
     along with SpeedReader. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef VNTLABEL_H
-#define VNTLABEL_H
+#include "speedreadersegment.h"
 
-#include <QLabel>
+SpeedReaderSegment::SpeedReaderSegment(QString value, bool containsStopWord, int displayTime) {
+    mValue = value;
+    mContainsStopWord = containsStopWord;
+    mDisplayTime = displayTime;
+}
 
-class VNTLabel : public QLabel
-{
-    Q_OBJECT
-public:
-    VNTLabel(QWidget* parent = 0);
-    VNTLabel(const QString& text, QWidget* parent = 0);
-    ~VNTLabel(){}
+QString SpeedReaderSegment::getValue() const {
+    return mValue;
+}
 
-signals:
-    void clicked();
+bool SpeedReaderSegment::isStopWordContained() const {
+    return mContainsStopWord;
+}
 
-protected:
-    void mouseReleaseEvent(QMouseEvent* ev);
-};
-
-#endif // VNTLABEL_H
+int SpeedReaderSegment::getDisplayTime() const {
+    return mDisplayTime;
+}

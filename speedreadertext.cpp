@@ -27,6 +27,7 @@ SpeedReaderText::SpeedReaderText(QString text) {
     mStopWordsRead = 0;
     mReading = false;
     mStopWordsCount = -1;
+    mEstimatedTimeInMS = -1;
 
     this->dissectText();
 }
@@ -41,7 +42,7 @@ QString SpeedReaderText::getRemainingText() {
     QString result;
 
     for (int i = mIndex - 1; i < mDissectText.length(); i++) {
-        result.append(QString("%1 ").arg(mDissectText.at(i)));
+        result.append(QString("%1 ").arg(mDissectText.at(i).getValue()));
     }
 
     return result.trimmed();
@@ -65,63 +66,43 @@ int SpeedReaderText::getStopWordsRead() {
 
 int SpeedReaderText::getStopWordsCount() {
     if (mStopWordsCount == -1) { // not cached
-        QList<QString> stopWords = Settings::getInstance()->getStopWords();
         mStopWordsCount = 0;
 
-        foreach(QString value, mDissectText) {
-            foreach(QString stopWord, stopWords) {
-                if(value.contains(stopWord)) {
-                    mStopWordsCount++;
-                    break; // count only 1 stopword
-                }
-            }
+        foreach (SpeedReaderSegment segment, mDissectText) {
+            if (segment.isStopWordContained()) mStopWordsCount++;
         }
-
-        return mStopWordsCount;
     }
 
     return mStopWordsCount;
 }
 
 int SpeedReaderText::getEstimatedTimeInMS() {
-    int readingTime = Settings::getInstance()->getReadingTimePerMinuteInMs();
-    int words = this->getMaxIndex() - mIndex;
+    if (mEstimatedTimeInMS == -1) { // not cached
+        mEstimatedTimeInMS = 0;
 
-    return words * readingTime;
+        for (int i = mIndex; i < this->getMaxIndex(); i++) {
+            mEstimatedTimeInMS += mDissectText[i].getDisplayTime();
+        }
+    }
+
+    return mEstimatedTimeInMS;
 }
 
 QString SpeedReaderText::getHTMLColoredText() {
     QString htmlColoredText = "<span style=\"background-color: rgb(128, 255, 128);\">";
-    QList<QString> stopWords = Settings::getInstance()->getStopWords();
 
-    for(int i = 0; i < mDissectText.length(); i++) {
-        QString word = mDissectText.at(i);
-        QString htmlWord = word + " ";
+    for (int i = 0; i < mDissectText.length(); i++) {
+        SpeedReaderSegment segment = mDissectText.at(i);
+        QString value = segment.getValue();
+        value = value == "" ? "<br>" : value.toHtmlEscaped(); // empty string = \n
+        QString htmlWord = value + " ";
 
-        if(i == mIndex) { // could also occur a stop word
-            htmlWord = "</span><span style=\"background-color: rgb(255, 128, 128);\"><a name=\"myAnchorForCurrentWord\">" + htmlWord + "</a>";
-
-            foreach (QString stopWord, stopWords) {
-                if (word.contains(stopWord)) {
-                    htmlWord = "</span><span style=\"background-color: rgb(255, 255, 128);\"><a name=\"myAnchorForCurrentWord\">" + word + " </a><span style=\"background-color: rgb(255, 128, 128);\">";
-                    break;
-                }
-            }
-
-            htmlColoredText += htmlWord;
+        if (i == mIndex) {
+            htmlColoredText += segment.isStopWordContained() ? "</span><span style=\"background-color: rgb(255, 255, 128);\"><a name=\"myAnchorForCurrentWord\">" + value + " </a><span style=\"background-color: rgb(255, 128, 128);\">" : "</span><span style=\"background-color: rgb(255, 128, 128);\"><a name=\"myAnchorForCurrentWord\">" + htmlWord + "</a>";
             continue;
         }
 
-        bool foundStopWord = false;
-
-        foreach (QString stopWord, stopWords) {
-            if (word.contains(stopWord)) {
-                foundStopWord = true;
-                break;
-            }
-        }
-
-        if(foundStopWord) {
+        if (segment.isStopWordContained()) {
             htmlWord = "<span style=\"background-color: rgb(255, 255, 128);\">" + htmlWord + "</span>";
         }
 
@@ -151,30 +132,26 @@ void SpeedReaderText::dissectText() {
 }
 
 void SpeedReaderText::run() {
-    Settings* Settings = Settings::getInstance();
-    QList<QString> stopWords = Settings->getStopWords();
-    int readingTime = Settings->getReadingTimePerMinuteInMs();
     float floatTextLength = (float) mDissectText.length();
 
     while(true) {
         bool notFinished = mDissectText.size() > mIndex;
 
         if(mReading && notFinished) {
-            QString word = mDissectText[mIndex];
+            SpeedReaderSegment segment = mDissectText[mIndex];
             SpeedReaderStatus status = SpeedReaderText::READING;
 
-            foreach (QString stopWord, stopWords) {
-                if (word.contains(stopWord)) {
-                    status = SpeedReaderText::STOPPING;
-                    mStopWordsRead++;
-                    break; // respect only 1 stop word
-                }
+            if (segment.isStopWordContained()) {
+                status = SpeedReaderText::STOPPING;
+                mStopWordsRead++;
             }
 
             mIndex++;
-            emit changed(word, mIndex == 0 ? 0 : (int) ((float) mIndex / floatTextLength * (float) 100), status);
+            emit changed(segment.getValue(), mIndex == 0 ? 0 : (int) ((float) mIndex / floatTextLength * (float) 100), status);
 
-            QThread::msleep(readingTime);
+            int segmentDisplayTime = segment.getDisplayTime();
+            mEstimatedTimeInMS -= segmentDisplayTime;
+            QThread::msleep(segmentDisplayTime);
         } else if(notFinished) {
             QThread::msleep(150);
         } else {

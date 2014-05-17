@@ -26,6 +26,8 @@
 #include <QColorDialog>
 #include <QFrame>
 
+#include <QCloseEvent>
+
 namespace Ui {
     class SettingsWindow;
 }
@@ -40,6 +42,10 @@ public:
     void retranslate();
     void showEvent(QShowEvent* event);
 
+protected:
+    void closeEvent(QCloseEvent* closeEvent);
+    void done(int r);
+
 private slots:
     void on_changeTextColorPushButton_clicked();
     void on_changeTextBackgroundColorPushButton_clicked();
@@ -47,15 +53,21 @@ private slots:
     void on_wordRemoveButton_clicked();
     void on_rssUrlRemoveButton_clicked();
     void on_rssUrlAddButton_clicked();
-    void on_SettingsWindow_finished(int result);
+    void on_radioButtonNoHTTPNetworkProxy_clicked();
+    void on_radioButtonUseSystemHTTPNetworkProxyConfiguration_clicked();
+    void on_radioButtonCustomHTTPNetworkProxy_clicked();
+    void on_displayLongerWordsCheckBox_clicked(bool checked);
 
 private:
     Ui::SettingsWindow* mUI;
     Settings* mSettings;
+    bool mSynchronized;
 
+    void synchronizeWithSettings();
     void changeBackground(QFrame* frame, QColor backgroundColor);
-    void addTableRow(QString word, bool stopWord, bool breakWord);
+    void addTableRow(Word word);
     QColor changeColorButtonClicked(QColor initialColor, QFrame* frame);
+    void setCustomHTTPNetworkProxyInputsEnabled(bool enabled);
 };
 
 #endif // SETTINGSWINDOW_H

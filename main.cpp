@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         bool anotherArg = i + 1 <= argsLength;
 
         if (string == "-t" && anotherArg && t == false && (t = true)) {
-            w.setReadWidgetText(args[i + 1]);
+            w.setReadingText(args[i + 1]);
         } else if (string == "-f" && anotherArg && t == false && (t = true)) {
             QFile file(args[i + 1]);
             if(!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
@@ -53,9 +53,9 @@ int main(int argc, char* argv[]) {
             }
 
             QString data(file.readAll());
-            w.setReadWidgetText(data);
-        } else if (string == "-r" && r == false && (r = true)) w.pasteWidgetReadButtonClicked();
-        else if (string == "-g" && r == false && (r = true)) w.pasteWidgetGoButtonClicked();
+            w.setReadingText(data);
+        } else if (string == "-r" && r == false && (r = true)) w.on_readButton_clicked();
+        else if (string == "-g" && r == false && (r = true)) w.on_goButton_clicked();
         else if (string == "-v") {
             qDebug() << "Version" << APPLICATION_VERSION;
             return 0;
@@ -72,7 +72,6 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // w.setMaximumWidth(940); // Release
     w.show();
 
     return a.exec();

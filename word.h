@@ -23,14 +23,15 @@
 #include <QString>
 
 class Word {
-    public:
-        Word();
-        Word(QString word, bool stopWord, bool breakWord);
-        bool equals(Word word);
+public:
+    Word();
+    Word(QString word, bool stopWord, bool breakWord, int delayWord);
+    bool equals(Word word);
 
-        QString word;
-        bool stopWord;
-        bool breakWord;
+    QString word;
+    bool stopWord;
+    bool breakWord;
+    int delayWord;
 };
 
 #endif // WORD_H

@@ -17,47 +17,50 @@
     along with VNTRSSReader. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "vntrssreader.h"
-
 #include <QXmlStreamReader>
+#include <QImageReader>
+
+#include "vntrssreader.h"
 
 VNTRSSReader::VNTRSSReader(QObject *parent) : QObject(parent) {
     mNetworkAccessManager = new QNetworkAccessManager(this);
     QObject::connect(mNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
+
+    mNetworkAccessManagerImages = new QNetworkAccessManager(this);
+    QObject::connect(mNetworkAccessManagerImages, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinishedImages(QNetworkReply*)));
 }
 
 VNTRSSReader::~VNTRSSReader() {
     delete mNetworkAccessManager;
+    delete mNetworkAccessManagerImages;
 }
 
-void VNTRSSReader::load(QUrl url, bool systemProxy = false) {
-    mNetworkAccessManager->setProxy(QNetworkProxy());
+void VNTRSSReader::load(QUrl url) {
+    this->load(url, true);
+}
 
-    if (systemProxy) {
-        QNetworkProxyQuery networkProxyQuery(url);
-        QList<QNetworkProxy> listOfProxies = QNetworkProxyFactory::systemProxyForQuery(networkProxyQuery);
-
-        foreach (QNetworkProxy proxy, listOfProxies) {
-            mNetworkAccessManager->setProxy(proxy);
-        }
-    }
-
+void VNTRSSReader::load(QUrl url, bool loadImages) {
+    mLoadImages = loadImages;
     mNetworkAccessManager->get(QNetworkRequest(url));
 }
 
-void VNTRSSReader::load(QUrl url, QNetworkProxy proxy) {
-    mNetworkAccessManager->setProxy(proxy);
-    mNetworkAccessManager->get(QNetworkRequest(url));
+void VNTRSSReader::load(QList<QUrl> urls) {
+    this->load(urls, true);
+}
+
+void VNTRSSReader::load(QList<QUrl> urls, bool loadImages) {
+    mLoadImages = loadImages;
+    foreach (QUrl url, urls) mNetworkAccessManager->get(QNetworkRequest(url));
 }
 
 void VNTRSSReader::replyFinished(QNetworkReply* networkReply) {
     QXmlStreamReader xmlReader(networkReply->readAll());
     QString iLink, iTitle, iDescription, iPubDate, iCategory, iGuid, iImageUrl;
     QString cLink, cTitle, cDescription, cPubDate, cLanguage, cCopyright, cImageUrl;
-    QString name, rssVersion, errorMessage;
+    QString name, errorMessage;
     bool didBeginProcessingItems = false;
 
-    QList<VNTRSSItem> items;
+    QList<VNTRSSItem*> items;
     for (int i = 0; !xmlReader.atEnd() && !xmlReader.hasError();) {
         xmlReader.readNext();
 
@@ -74,7 +77,7 @@ void VNTRSSReader::replyFinished(QNetworkReply* networkReply) {
                     errorMessage = QString("%1 %2").arg(networkReply->url().toString(), tr("is not a valid RSS feed"));
                     break;
                 } else {
-                    rssVersion = xmlReader.attributes().value("version").toString().simplified();
+                    QString rssVersion = xmlReader.attributes().value("version").toString().simplified();
 
                     if (rssVersion != "2.0") {
                         errorMessage = tr("Unsupported RSS version %1 in RSS feed %2").arg(rssVersion, networkReply->url().toString());
@@ -101,15 +104,55 @@ void VNTRSSReader::replyFinished(QNetworkReply* networkReply) {
 
             if (name == "item") didBeginProcessingItems = true;
         } else if (xmlReader.isEndElement()) {
-            VNTRSSItem item(iLink, iTitle, iDescription, iPubDate, iCategory, iGuid, iImageUrl);
+            if (name == "item") {
+                VNTRSSItem* item = new VNTRSSItem(iLink, iTitle, iDescription, iPubDate, iCategory, iGuid, iImageUrl);
+                items.append(item);
 
-            if (name == "item" && !rssVersion.isNull()) items.append(item);
+                this->loadImage(item);
+
+                iLink.clear();
+                iTitle.clear();
+                iDescription.clear();
+                iPubDate.clear();
+                iCategory.clear();
+                iGuid.clear();
+                iImageUrl.clear();
+            }
         }
     }
 
-    VNTRSSChannel* rssChannel = new VNTRSSChannel(cLink, cTitle, cDescription, cPubDate, cLanguage, cCopyright, cImageUrl, networkReply->url(), items);
+    VNTRSSChannel* rssChannel = new VNTRSSChannel(cLink, cTitle, cDescription, cPubDate, cLanguage, cCopyright, cImageUrl, networkReply->url(), errorMessage, items);
+    mRSSChannels.append(rssChannel);
+    this->loadImage(rssChannel);
 
-    emit loadedRSS(rssChannel, errorMessage);
+    this->fireEmitIfDone();
 
     delete networkReply;
+}
+
+void VNTRSSReader::replyFinishedImages(QNetworkReply* networkReply) {
+    QList<VNTRSSCommon*> commons = mUrlItemMultiMap.values(networkReply->url());
+    QImage image = QImageReader(networkReply).read();
+
+    foreach (VNTRSSCommon* common, commons) common->setImage(image);
+
+    mUrlItemMultiMap.remove(networkReply->url());
+
+    this->fireEmitIfDone();
+
+    delete networkReply;
+}
+
+void VNTRSSReader::loadImage(VNTRSSCommon* common) {
+    if (mLoadImages && !common->getImageUrl().isEmpty()) {
+        if (mUrlItemMultiMap.values(common->getImageUrl()).size() == 0) mNetworkAccessManagerImages->get(QNetworkRequest(common->getImageUrl()));
+        mUrlItemMultiMap.insert(common->getImageUrl(), common);
+    }
+}
+
+void VNTRSSReader::fireEmitIfDone() {
+    if (mUrlItemMultiMap.size() == 0) {
+        emit loadedRSS(mRSSChannels);
+        mRSSChannels.clear();
+    }
 }

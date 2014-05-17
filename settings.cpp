@@ -29,10 +29,13 @@ const QString CO_TEXT_COLOR = "textColor";
 const QString CO_TEXT_BACKGROUND_COLOR = "textBackgroundColor";
 const QString CO_FONT_FAMILY = "fontFamily";
 const QString CO_FONT_SIZE = "fontSize";
+const QString CO_DISPLAY_LONGER_WORDS_LONGER = "displayLongerWordsLonger";
+const QString CO_WORD_LENGTH = "wordLength";
 const QString CO_NUMBER_OF_WORDS = "numberOfWords";
 const QString CO_WORDS_PER_MINUTE = "wordsPerMinute";
 const QString CO_NUMBER_GROUPING = "numberGrouping";
 const QString CO_JUMP_BACK_TO_START = "jumpBackToStart";
+const QString CO_STALL_AT_INDENTIONS = "stallAtIndentions";
 const QString CO_WORDS = "words";
 const QString CO_WORD = "word";
 const QString CO_RSS_URLS = "rss_urls";
@@ -40,6 +43,10 @@ const QString CO_RSS_URL = "rss_url";
 const QString CO_VALUE = "value";
 const QString CO_STOP_WORD = "stopWord";
 const QString CO_BREAK_WORD = "breakWord";
+const QString CO_DELAY_WORD = "delayWord";
+const QString CO_HTTP_NETWORK_PROXY_TYPE = "httpNetworkProxyType";
+const QString CO_HTTP_NETWORK_PROXY_SERVER = "httpNetworkProxyServer";
+const QString CO_HTTP_NETWORK_PROXY_PORT = "httpNetworkProxyPort";
 
 const int MIN_FONT_SIZE = 8;
 const int MAX_FONT_SIZE = 100;
@@ -49,6 +56,9 @@ const int MAX_NUMBER_OF_WORDS = 10;
 
 const int MIN_WORDS_PER_MINUTE = 300;
 const int MAX_WORDS_PER_MINUTE = 3000;
+
+const int MIN_WORDS_LENGTH = 5;
+const int MAX_WORDS_LENGTH = 20;
 
 Settings* Settings::getInstance() {
     if (!mInstance) {
@@ -60,14 +70,21 @@ Settings* Settings::getInstance() {
 
 Settings::Settings() {
     QSettings settings;
-    mFontSize = settings.value(CO_FONT_SIZE, 35).toInt();
-    mFontFamily = settings.value(CO_FONT_FAMILY, QFontDatabase().families()[0]).toString();
-    mNumberGrouping = settings.value(CO_NUMBER_GROUPING, true).toBool();
-    mJumpBackToStart = settings.value(CO_JUMP_BACK_TO_START, false).toBool();
-    mNumberOfWords = settings.value(CO_NUMBER_OF_WORDS, 1).toInt();
-    mWordsPerMinute = settings.value(CO_WORDS_PER_MINUTE, 300).toInt();
-    mTextBackgroundColor = settings.value(CO_TEXT_BACKGROUND_COLOR, QColor(255, 255, 255)).value<QColor>();
-    mTextColor = settings.value(CO_TEXT_COLOR, QColor(0, 0, 0)).value<QColor>();
+    this->setFontSize(settings.value(CO_FONT_SIZE, 35).toInt());
+    this->setFontFamily(settings.value(CO_FONT_FAMILY, QFontDatabase().families()[0]).toString());
+    this->setDisplayLongerWordsLonger(settings.value(CO_DISPLAY_LONGER_WORDS_LONGER, true).toBool());
+    this->setWordLength(settings.value(CO_WORD_LENGTH, 8).toInt());
+    this->setNumberGrouping(settings.value(CO_NUMBER_GROUPING, true).toBool());
+    this->setJumpBackToStart(settings.value(CO_JUMP_BACK_TO_START, false).toBool());
+    this->setStallAtIndentions(settings.value(CO_STALL_AT_INDENTIONS, true).toBool());
+    this->setNumberOfWords(settings.value(CO_NUMBER_OF_WORDS, 1).toInt());
+    this->setWordsPerMinute(settings.value(CO_WORDS_PER_MINUTE, 300).toInt());
+    this->setTextBackgroundColor(settings.value(CO_TEXT_BACKGROUND_COLOR, QColor(255, 255, 255)).value<QColor>());
+    this->setTextColor(settings.value(CO_TEXT_COLOR, QColor(0, 0, 0)).value<QColor>());
+    mHTTPNetworkProxy.setType(QNetworkProxy::HttpProxy);
+    mHTTPNetworkProxy.setHostName(settings.value(CO_HTTP_NETWORK_PROXY_SERVER, "proxy").value<QString>());
+    mHTTPNetworkProxy.setPort(settings.value(CO_HTTP_NETWORK_PROXY_PORT, 8080).value<quint16>());
+    this->setHTTPNetworkProxyType(settings.value(CO_HTTP_NETWORK_PROXY_TYPE, Settings::USE_SYSTEM_HTTP_NETWORK_PROXY_CONFIGURATION).value<int>());
 
     int size = settings.beginReadArray(CO_WORDS);
     for (int i = 0; i < size; i++) {
@@ -76,7 +93,8 @@ Settings::Settings() {
         QString word = settings.value(CO_VALUE).toString();
         bool stopWord = settings.value(CO_STOP_WORD).toBool();
         bool breakWord = settings.value(CO_BREAK_WORD).toBool();
-        this->appendStopWord(word, stopWord, breakWord);
+        int delayWord = qMax(0, settings.value(CO_DELAY_WORD, 0).toInt());
+        this->appendWord(word, stopWord, breakWord, delayWord);
     }
 
     settings.endArray();
@@ -84,11 +102,12 @@ Settings::Settings() {
     size = settings.beginReadArray(CO_RSS_URLS);
     for (int i = 0; i < size; i++) {
         settings.setArrayIndex(i);
-
         this->appendRSSUrl(settings.value(CO_RSS_URL).value<QUrl>());
     }
 
     settings.endArray();
+
+    mChangedWords = mChangedRSSUrls = true;
 }
 
 void Settings::synchronize() {
@@ -98,23 +117,31 @@ void Settings::synchronize() {
     settings.setValue(CO_TEXT_BACKGROUND_COLOR, mTextBackgroundColor);
     settings.setValue(CO_FONT_FAMILY, mFontFamily);
     settings.setValue(CO_FONT_SIZE, mFontSize);
+    settings.setValue(CO_DISPLAY_LONGER_WORDS_LONGER, mDisplayLongerWordsLonger);
+    settings.setValue(CO_WORD_LENGTH, mWordLength);
     settings.setValue(CO_NUMBER_OF_WORDS, mNumberOfWords);
     settings.setValue(CO_WORDS_PER_MINUTE, mWordsPerMinute);
     settings.setValue(CO_NUMBER_GROUPING, mNumberGrouping);
     settings.setValue(CO_JUMP_BACK_TO_START, mJumpBackToStart);
+    settings.setValue(CO_HTTP_NETWORK_PROXY_TYPE, mHTTPNetworkProxyType);
+    settings.setValue(CO_HTTP_NETWORK_PROXY_SERVER, mHTTPNetworkProxy.hostName());
+    settings.setValue(CO_HTTP_NETWORK_PROXY_PORT, mHTTPNetworkProxy.port());
 
     settings.beginWriteArray(CO_WORDS);
+    settings.remove("");
 
     for (int i = 0; i < mWords.count(); i++) {
         settings.setArrayIndex(i);
         settings.setValue(CO_VALUE, mWords.at(i).word);
         settings.setValue(CO_STOP_WORD, mWords.at(i).stopWord);
         settings.setValue(CO_BREAK_WORD, mWords.at(i).breakWord);
+        settings.setValue(CO_DELAY_WORD, mWords.at(i).delayWord);
     }
 
     settings.endArray();
 
     settings.beginWriteArray(CO_RSS_URLS);
+    settings.remove("");
 
     for (int i = 0; i < mRSSUrls.count(); i++) {
         settings.setArrayIndex(i);
@@ -127,17 +154,34 @@ void Settings::synchronize() {
     emit updatedSettings();
 }
 
-QList<QString> Settings::dissectText(QString text) {
+QString Settings::prepareTextForDissecting(QString text) {
+    QString value;
+    text = text.replace("\t", " ").trimmed();
+
+    for (int i = 0; i < text.length(); i++) {
+        QChar c = text.at(i);
+        bool notAtEnd = i + 1 < text.length();
+
+        if ((c != ' ' && c != '\n') || (c == ' ' && notAtEnd && text.at(i + 1) != ' ') || (c == '\n' && notAtEnd && text.at(i + 1) != '\n')) value.append(c);
+    }
+
+    return value;
+}
+
+QList<SpeedReaderSegment> Settings::dissectText(QString text) {
     const char seperator = ' ';
     int counter = 0;
-    text = text.simplified().trimmed();
+    text = mStallAtIndentions ? this->prepareTextForDissecting(text) : text.simplified().trimmed();
 
-    QList<QString> dissectedText = QList<QString>();
+    QList<SpeedReaderSegment> dissectedText = QList<SpeedReaderSegment>();
     QString tmpText = QString();
 
     for(int i = 0; i < text.length(); i++) {
-        if (text[i] == seperator && ++counter == mNumberOfWords) {
-            dissectedText.append(tmpText);
+        bool indention = mStallAtIndentions && text[i] == '\n';
+
+        if ((text[i] == seperator && ++counter == mNumberOfWords) || indention) {
+            dissectedText.append(this->getSpeedReaderSegment(tmpText));
+            if (indention) dissectedText.append(this->getSpeedReaderSegment(""));
             tmpText.clear();
             counter = 0;
             continue;
@@ -147,33 +191,30 @@ QList<QString> Settings::dissectText(QString text) {
 
         foreach (QString breakWord, mBreakWords) {
             if (tmpText.contains(breakWord)) {
-                dissectedText.append(tmpText);
+                dissectedText.append(this->getSpeedReaderSegment(tmpText));
                 tmpText.clear();
                 counter = 0;
-
-                if (text[i + 1] == ' ') i++; // ignore next space for right order
-
                 break;
             }
         }
     }
 
-    if (tmpText.length() != 0 && tmpText != " " ) dissectedText.append(tmpText);
+    if (tmpText.trimmed().length() != 0) dissectedText.append(this->getSpeedReaderSegment(tmpText));
 
     if (mNumberGrouping) {
         QRegularExpression regularExPressionNumber("[0-9]+");
         bool isLastNumber = false;
 
         for (int i = 0; i < dissectedText.length(); i++) {
-            QString current = dissectedText[i];
-            bool isNumber = current.contains(regularExPressionNumber);
+            SpeedReaderSegment currentSegment = dissectedText[i];
+            bool isNumber = currentSegment.getValue().contains(regularExPressionNumber);
 
             if (isNumber && isLastNumber) {
-                QString before = dissectedText[i - 1];
+                SpeedReaderSegment beforeSegment = dissectedText[i - 1];
                 dissectedText.removeAt(i - 1);
                 dissectedText.removeAt(i - 1);
 
-                dissectedText.insert(i - 1, before + seperator + current);
+                dissectedText.insert(i - 1, this->getSpeedReaderSegment(beforeSegment.getValue() + seperator + currentSegment.getValue()));
                 i--;
             }
 
@@ -215,13 +256,41 @@ int Settings::getFontSize() {
 }
 
 void Settings::setFontSize(int fontSize) {
-    if(fontSize < MIN_FONT_SIZE) {
+    if (fontSize < MIN_FONT_SIZE) {
         fontSize = MIN_FONT_SIZE;
-    } else if(fontSize > MAX_FONT_SIZE) {
+    } else if (fontSize > MAX_FONT_SIZE) {
         fontSize = MAX_FONT_SIZE;
     }
 
     mFontSize = fontSize;
+}
+
+bool Settings::displayLongerWordsLonger() {
+    return mDisplayLongerWordsLonger;
+}
+
+void Settings::setDisplayLongerWordsLonger(bool displayLongerWordsLonger) {
+    mChangedDisplayLongerWordsLonger = mDisplayLongerWordsLonger != displayLongerWordsLonger;
+    mDisplayLongerWordsLonger = displayLongerWordsLonger;
+}
+
+int Settings::getWordLength() {
+    return mWordLength;
+}
+
+void Settings::setWordLength(int wordLength) {
+    if (wordLength < MIN_WORDS_LENGTH) {
+        wordLength = MIN_WORDS_LENGTH;
+    } else if (wordLength > MAX_WORDS_LENGTH) {
+        wordLength = MAX_WORDS_LENGTH;
+    }
+
+    mChangedDisplayLongerWordsLonger = mWordLength != wordLength;
+    mWordLength = wordLength;
+}
+
+bool Settings::changedDisplayLongerWordsLonger() {
+    return mChangedDisplayLongerWordsLonger;
 }
 
 int Settings::getNumberOfWords() {
@@ -229,9 +298,9 @@ int Settings::getNumberOfWords() {
 }
 
 void Settings::setNumberOfWords(int numberOfWords) {
-    if(numberOfWords < MIN_NUMBER_OF_WORDS) {
+    if (numberOfWords < MIN_NUMBER_OF_WORDS) {
         numberOfWords = MIN_NUMBER_OF_WORDS;
-    } else if(numberOfWords > MAX_NUMBER_OF_WORDS) {
+    } else if (numberOfWords > MAX_NUMBER_OF_WORDS) {
         numberOfWords = MAX_NUMBER_OF_WORDS;
     }
 
@@ -248,9 +317,9 @@ int Settings::getWordsPerMinute() {
 }
 
 void Settings::setWordsPerMinute(int wordsPerMinute) {
-    if(wordsPerMinute < MIN_WORDS_PER_MINUTE) {
+    if (wordsPerMinute < MIN_WORDS_PER_MINUTE) {
         wordsPerMinute = MIN_WORDS_PER_MINUTE;
-    } else if(wordsPerMinute > MAX_WORDS_PER_MINUTE) {
+    } else if (wordsPerMinute > MAX_WORDS_PER_MINUTE) {
         wordsPerMinute = MAX_WORDS_PER_MINUTE;
     }
 
@@ -262,7 +331,7 @@ bool Settings::changedWordsPerMinute() {
     return mChangedWordsPerMinute;
 }
 
-bool Settings::isNumberGrouping() {
+bool Settings::numberGrouping() {
     return mNumberGrouping;
 }
 
@@ -275,12 +344,53 @@ bool Settings::changedNumberGrouping() {
     return mChangedNumberGrouping;
 }
 
-bool Settings::isJumpBackToStart() {
+bool Settings::jumpBackToStart() {
     return mJumpBackToStart;
 }
 
 void Settings::setJumpBackToStart(bool jumpBackToStart) {
     mJumpBackToStart = jumpBackToStart;
+}
+
+bool Settings::changedStallAtIndentions() {
+    return mChangedStallAtIndentions;
+}
+
+bool Settings::stallAtIndentions() {
+    return mStallAtIndentions;
+}
+
+void Settings::setStallAtIndentions(bool stallAtIndentions) {
+    mChangedStallAtIndentions = mStallAtIndentions != stallAtIndentions;
+    mStallAtIndentions = stallAtIndentions;
+}
+
+bool Settings::changedHTTPNetworkProxy() {
+    return mChangedHTTPNetworkProxy;
+}
+
+int Settings::getHTTPNetworkProxyType() {
+    return mHTTPNetworkProxyType;
+}
+
+void Settings::setHTTPNetworkProxyType(int httpNetworkProxyType) {
+    switch (httpNetworkProxyType) {
+        case NO_HTTP_NETWORK_PROXY:
+        case USE_SYSTEM_HTTP_NETWORK_PROXY_CONFIGURATION:
+        case CUSTOM_HTTP_NETWORK_PROXY:
+            mChangedHTTPNetworkProxy = mHTTPNetworkProxyType != httpNetworkProxyType;
+            mHTTPNetworkProxyType = httpNetworkProxyType;
+            break;
+    }
+}
+
+QNetworkProxy Settings::getHTTPNetworkProxy() {
+    return mHTTPNetworkProxy;
+}
+
+void Settings::setHTTPNetworkProxy(QNetworkProxy httpNetworkProxy) {
+    mChangedHTTPNetworkProxy = mHTTPNetworkProxy.hostName() != httpNetworkProxy.hostName() || mHTTPNetworkProxy.port() != httpNetworkProxy.port();
+    mHTTPNetworkProxy = httpNetworkProxy;
 }
 
 QList<Word> Settings::getWords() {
@@ -289,14 +399,6 @@ QList<Word> Settings::getWords() {
 
 bool Settings::changedWords() {
     return mChangedWords;
-}
-
-QList<QString> Settings::getStopWords() {
-    return mStopWords;
-}
-
-QList<QString> Settings::getBreakWords() {
-    return mBreakWords;
 }
 
 void Settings::setWords(QList<Word> words) {
@@ -323,10 +425,14 @@ void Settings::setWords(QList<Word> words) {
 
     mStopWords = QList<QString>();
     mBreakWords = QList<QString>();
+    mDelayWords = QMap<QString, int>();
 
-    for(int i = 0; i < mWords.count(); i++) {
-        if (mWords.at(i).stopWord) mStopWords.append(mWords.at(i).word);
-        if (mWords.at(i).breakWord) mBreakWords.append(mWords.at(i).word);
+    for (int i = 0; i < mWords.count(); i++) {
+        Word word = mWords.at(i);
+
+        if (word.stopWord) mStopWords.append(word.word);
+        if (word.breakWord) mBreakWords.append(word.word);
+        if (word.delayWord > 0) mDelayWords.insert(word.word, word.delayWord);
     }
 }
 
@@ -363,17 +469,16 @@ int Settings::getReadingTimePerMinuteInMs() {
     return (60 * 1000) * mNumberOfWords / mWordsPerMinute;
 }
 
-void Settings::appendStopWord(QString value, bool stopWord, bool breakWord) {
+void Settings::appendWord(QString value, bool stopWord, bool breakWord, int delayWord) {
     if (value.isEmpty()) return;
 
-    foreach(Word word, mWords) {
-        if (word.word == value) return;
-    }
+    foreach (Word word, mWords) if (word.word == value) return;
 
-    mWords.append(Word(value, stopWord, breakWord));
+    mWords.append(Word(value, stopWord, breakWord, delayWord));
 
     if (stopWord) mStopWords.append(value);
     if (breakWord) mBreakWords.append(value);
+    if (delayWord > 0) mDelayWords.insert(value, delayWord);
 }
 
 bool Settings::appendRSSUrl(QUrl rssUrl) {
@@ -390,6 +495,25 @@ bool Settings::appendRSSUrl(QUrl rssUrl) {
 
         return true;
     }
+
+    return false;
+}
+
+SpeedReaderSegment Settings::getSpeedReaderSegment(QString value) {
+    int readingTime = this->getReadingTimePerMinuteInMs();
+    int wordLength = mWordLength * mNumberOfWords;
+    int valueLength = value.length() - mNumberOfWords + 1; // ignore whitespaces
+
+    if (mDisplayLongerWordsLonger && wordLength < valueLength) readingTime = (int) ((float) readingTime * ((float) valueLength / (float) wordLength));
+
+    QMap<QString, int>::iterator it;
+    for (it = mDelayWords.begin(); it != mDelayWords.end(); ++it) readingTime += it.value() * value.count(it.key());
+
+    return SpeedReaderSegment(value, this->stringContainsStopWord(value), readingTime);
+}
+
+bool Settings::stringContainsStopWord(QString value) {
+    foreach (QString stopWord, mStopWords) if (value.contains(stopWord)) return true;
 
     return false;
 }

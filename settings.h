@@ -24,7 +24,11 @@
 #include <QString>
 #include <QColor>
 #include <QUrl>
+#include <QNetworkProxy>
+#include <QMap>
+
 #include "word.h"
+#include "speedreadersegment.h"
 
 class Settings : public QObject {
         Q_OBJECT
@@ -33,9 +37,16 @@ class Settings : public QObject {
         void updatedSettings();
 
     public:
+        static const int NO_HTTP_NETWORK_PROXY = 0;
+        static const int USE_SYSTEM_HTTP_NETWORK_PROXY_CONFIGURATION = 1;
+        static const int CUSTOM_HTTP_NETWORK_PROXY = 2;
+
+        static const int DOUBLE_CLICK_RSS_FEED_OPEN_INTERNALLY = 0;
+        static const int DOUBLE_CLICK_RSS_FEED_OPEN_EXTERNALLY = 1;
+
         static Settings* getInstance();
 
-        QList<QString> dissectText(QString text);
+        QList<SpeedReaderSegment> dissectText(QString text);
         int getReadingTimePerMinuteInMs();
 
         void synchronize();
@@ -46,6 +57,11 @@ class Settings : public QObject {
         void setTextBackgroundColor(QColor textBackgroundColor);
         QString getFontFamily();
         void setFontFamily(QString fontFamily);
+        bool displayLongerWordsLonger();
+        void setDisplayLongerWordsLonger(bool displayLongerWordsLonger);
+        int getWordLength();
+        void setWordLength(int wordLength);
+        bool changedDisplayLongerWordsLonger();
         int getFontSize();
         void setFontSize(int fontSize);
         int getNumberOfWords();
@@ -54,15 +70,21 @@ class Settings : public QObject {
         int getWordsPerMinute();
         void setWordsPerMinute(int wordsPerMinute);
         bool changedWordsPerMinute();
-        bool isNumberGrouping();
+        bool numberGrouping();
         void setNumberGrouping(bool numberGrouping);
         bool changedNumberGrouping();
-        bool isJumpBackToStart();
+        bool jumpBackToStart();
         void setJumpBackToStart(bool jumpBackToStart);
+        bool changedStallAtIndentions();
+        bool stallAtIndentions();
+        void setStallAtIndentions(bool stallAtIndentions);
+        bool changedHTTPNetworkProxy();
+        int getHTTPNetworkProxyType();
+        void setHTTPNetworkProxyType(int httpNetworkProxyType);
+        QNetworkProxy getHTTPNetworkProxy();
+        void setHTTPNetworkProxy(QNetworkProxy httpNetworkProxy);
 
         QList<Word> getWords();
-        QList<QString> getStopWords();
-        QList<QString> getBreakWords();
         void setWords(QList<Word> stopWords);
         bool changedWords();
 
@@ -81,6 +103,9 @@ class Settings : public QObject {
         QColor  mTextBackgroundColor;
         QString mFontFamily;
         int mFontSize;
+        bool mDisplayLongerWordsLonger;
+        int mWordLength;
+        bool mChangedDisplayLongerWordsLonger;
         int mNumberOfWords;
         bool mChangedNumberOfWords;
         int mWordsPerMinute;
@@ -88,14 +113,24 @@ class Settings : public QObject {
         bool mNumberGrouping;
         bool mChangedNumberGrouping;
         bool mJumpBackToStart;
+        bool mChangedStallAtIndentions;
+        bool mStallAtIndentions;
+        int mHTTPNetworkProxyType;
+        QNetworkProxy mHTTPNetworkProxy;
+        bool mChangedHTTPNetworkProxy;
+
         QList<Word> mWords;
         bool mChangedWords;
         QList<QString> mStopWords;
         QList<QString> mBreakWords;
+        QMap<QString, int> mDelayWords;
         QList<QUrl> mRSSUrls;
         bool mChangedRSSUrls;
 
-        void appendStopWord(QString value, bool stopWord, bool breakWord);
+        void appendWord(QString value, bool stopWord, bool breakWord, int delayWord);
+        SpeedReaderSegment getSpeedReaderSegment(QString value);
+        bool stringContainsStopWord(QString value);
+        QString prepareTextForDissecting(QString text);
 };
 
 #endif // SETTINGS_H
