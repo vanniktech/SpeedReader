@@ -3,7 +3,11 @@ SpeedReader
 
 This is a cross-platform SpeedReader developed with Qt, which I did as my first big C++ project, so don't be too hard on me. It is licensed under the GPL v2 terms. [Speed reading](http://en.wikipedia.org/wiki/Speed_reading) is a technique to read any kinds of texts super fast. If you have any ideas on how to improve the SpeedReader or its code, simply write an [email](mailto:niklas.baudy@vanniktech.de) to me or fork the project. If you have any problems or you have found any issues or bugs, feel free to report them.
 
-[A full description and screenshots of the SpeedReader can be found here.](http://vanniktech.de/SpeedReader/)
+## Download
+[![Get it for Windows](http://vanniktech.de/img/windows_icon.png)](http://vanniktech.de/SpeedReader/Windows?ref=github)
+[![Get it for Mac](http://vanniktech.de/img/apple_icon.png)](http://vanniktech.de/SpeedReader/Mac?ref=github)
+[![Get it for Linux](http://vanniktech.de/img/linux_icon.png)](http://vanniktech.de/SpeedReader/Linux?ref=github)
+[![Get it on Google Play](https://developer.android.com/images/brand/en_generic_rgb_wo_45.png)](https://play.google.com/store/apps/details?id=com.vanniktech.speedreader)
 
 ## Features
 - read multiple words
