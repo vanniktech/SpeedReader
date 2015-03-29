@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -21,12 +21,11 @@
 #define SETTINGSWINDOW_H
 
 #include <QDialog>
-
-#include <settings.h>
 #include <QColorDialog>
 #include <QFrame>
-
 #include <QCloseEvent>
+
+#include "settings.h"
 
 namespace Ui {
     class SettingsWindow;
@@ -34,6 +33,12 @@ namespace Ui {
 
 class SettingsWindow : public QDialog {
     Q_OBJECT
+
+signals:
+    void deleteRSSCache();
+    void deleteAllRSSSites();
+    void deleteRSSSites(QList<QString> rssSite);
+    void addRSSSites(QList<QString> rssSite);
 
 public:
     SettingsWindow(QWidget* parent);
@@ -49,20 +54,28 @@ protected:
 private slots:
     void on_changeTextColorPushButton_clicked();
     void on_changeTextBackgroundColorPushButton_clicked();
+    void on_changeLinesColorPushButton_clicked();
     void on_wordAddButton_clicked();
-    void on_wordRemoveButton_clicked();
-    void on_rssUrlRemoveButton_clicked();
-    void on_rssUrlAddButton_clicked();
+    void on_wordDeleteButton_clicked();
+    void on_wordDeleteAllButton_clicked();
+    void on_rssSiteDeleteButton_clicked();
+    void on_rssSiteDeleteAllButton_clicked();
+    void on_rssSiteAddButton_clicked();
     void on_radioButtonNoHTTPNetworkProxy_clicked();
     void on_radioButtonUseSystemHTTPNetworkProxyConfiguration_clicked();
     void on_radioButtonCustomHTTPNetworkProxy_clicked();
     void on_displayLongerWordsCheckBox_clicked(bool checked);
+    void on_deleteCachePushButton_clicked();
 
 private:
     Ui::SettingsWindow* mUI;
     Settings* mSettings;
+    QList<QString> mAddedRSSSites;
+    QList<QString> mDeletedRSSSites;
+    bool mDeleteAllRSSSites;
     bool mSynchronized;
 
+    int areYouSureMessageBox(QString title, QString message);
     void synchronizeWithSettings();
     void changeBackground(QFrame* frame, QColor backgroundColor);
     void addTableRow(Word word);

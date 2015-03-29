@@ -18,22 +18,14 @@ This is a cross-platform SpeedReader developed with Qt, which I did as my first 
 - longer words get displayed longer
 - option to stall at indentions
 - HTTP proxy settings configuration
-- RSS interface, to consume RSS v2 feeds ([this library was used](https://github.com/vanniktech/VNTRSSReader))
+- RSS interface, to consume and speedread RSS and Atom feeds ([this library was used](https://github.com/vanniktech/VNTRSSReader))
 - command line interface ([options are described here](http://vanniktech.de/SpeedReader/#cli))
 - overview to see, what you've already read of your text and what is going to come
 - calculation of estimated reading time
 
-## Plans for v1.4.0
-- support RSS v1.0/v0.91
-- support ATOM v1.0
-- polish and enhance complete RSS section
-- improve user experience
-
 ## Building
 
-I use Qt Creator to build and develop SpeedReader. I am using Qt v5.2.1. If you want to build the SpeedReader with Qt 4.x.x, you may run into some problems, because the application does use some new Qt functions. Also building the app with qmake is not recommended, since you may run into some errors depending on your system environment.
-
-Some guys have contacted me about the two mentioned issues and they want to "port" the application. I will keep you posted about that. If you like, feel free to fork and mess around!
+I use Qt Creator to build and develop SpeedReader. I am using Qt v5.4.1. If you want to build the SpeedReader with Qt 4.x.x, you may run into some problems, because the application does use some new Qt functions. Also building the app with qmake is not recommended, since you may run into some errors depending on your system environment.
 
 ## License
 GPL v2

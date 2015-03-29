@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -20,165 +20,175 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 
-#include <QDir>
-#include <QBoxLayout>
 #include <QMessageBox>
 #include <QDesktopServices>
-#include <QTimer>
+#include <QPainter>
+#include <QShortcut>
+#include <QInputDialog>
 
-#include <QNetworkRequest>
-
-#include <settings.h>
-#include <lib/vntformatter.h>
+#include "lib/vntformatter.h"
 
 #ifdef Q_OS_WIN32
 const QString OS = "Windows";
 #elif defined Q_OS_MAC
 const QString OS = "Mac";
-#elif defined Q_OS_ANDROID
-const QString OS = "Android";
 #elif defined Q_OS_LINUX
 const QString OS = "Linux";
 #endif
 
 const QString coSite = ORGANIZATION_DOMAIN;
+const QString coSiteGitHub = "https://github.com/vanniktech/SpeedReader";
 const QString coSiteDonate = coSite + "Donate/";
 const QString coSiteSpeedReader = coSite + "SpeedReader/";
-const QString coSiteSpeedReaderLatestOS = coSiteSpeedReader + "latest/" + OS;
-const QString coSiteSpeedReaderLatestOSTXT = coSiteSpeedReaderLatestOS + ".txt";
-const QString coSiteSpeedReaderLatestOSZIP = coSiteSpeedReaderLatestOS + ".zip";
+const QString coSiteSpeedReaderOSTXT = coSiteSpeedReader + "latest/" + OS + ".txt";
+const QString coSiteSpeedReaderOSZIP = coSiteSpeedReader + OS + "/" + APPLICATION_VERSION;
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), mUI(new Ui::MainWindow) {
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent), mSpeedReaderText(Settings::getInstance(), this), mUI(new Ui::MainWindow) {
     mUI->setupUi(this);
 
-    mSpeedReaderText = 0;
+    mI18N = new I18N(this);
+
+    mNavigationDrawer = new NavigationDrawer(mUI->navigationDrawerScrollAreaWidget);
+    QObject::connect(mNavigationDrawer, SIGNAL(onRefreshRSSSiteButtonClicked()), this, SLOT(refreshButton_clicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(onAddRSSSiteButtonClicked()), this, SLOT(addRSSSiteButton_clicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(onSpeedreadClicked()), this, SLOT(speedreadClicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(onAllClicked()), this, SLOT(allClicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(onUnspeedreadClicked()), this, SLOT(unspeedreadClicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(onTodayClicked()), this, SLOT(todayClicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(onYesterdayClicked()), this, SLOT(yesterdayClicked()));
+    QObject::connect(mNavigationDrawer, SIGNAL(rssSiteClicked(QString)), this, SLOT(rssSiteClicked(QString)));
+
+    mRSS = new RSS(mUI->rssListWidget, this);
+    QObject::connect(mRSS, SIGNAL(failedToOpenDatabase()), this, SLOT(failedToOpenDatabase()));
+    QObject::connect(mRSS, SIGNAL(rssDataChanged()), this, SLOT(rssDataChanged()));
+    QObject::connect(mRSS, SIGNAL(speedread(QString)), this, SLOT(speedreadText(QString)));
+    QObject::connect(mRSS, SIGNAL(openInWebView(QUrl)), this, SLOT(openInWebView(QUrl)));
+    QObject::connect(mRSS, SIGNAL(openInDefaultWebBrowser(QUrl)), this, SLOT(openInDefaultWebBrowser(QUrl)));
+    QObject::connect(mRSS, SIGNAL(failedToLoadRSSChannel(QString)), this, SLOT(failedToLoadRSSChannel(QString)));
+
+    // Some layout fixes (can't be done through Qt Designer)
+    mUI->buttonLayout->setAlignment(Qt::AlignLeft);
+    mUI->stopCancelButtonLayout->setAlignment(Qt::AlignLeft);
+    mUI->continueButton->setVisible(false);
+
+    this->speedreadClicked();
+    this->refreshNavigationDrawer();
+
+    QObject::connect(&mSpeedReaderText, SIGNAL(changed(QString, int, SpeedReaderText::SpeedReaderStatus)), this, SLOT(changed(QString, int, SpeedReaderText::SpeedReaderStatus)));
+    this->updateStatusWidget();
 
     mSettings = Settings::getInstance();
     QObject::connect(mSettings, SIGNAL(updatedSettings()), this, SLOT(updatedSettings()));
     mSettingsWindow = new SettingsWindow(this);
+    QObject::connect(mSettingsWindow, SIGNAL(deleteRSSCache()), mRSS, SLOT(deleteRSSCache()));
+    QObject::connect(mSettingsWindow, SIGNAL(deleteAllRSSSites()), mRSS, SLOT(deleteAllRSSSites()));
+    QObject::connect(mSettingsWindow, SIGNAL(deleteRSSSites(QList<QString>)), mRSS, SLOT(deleteRSSSites(QList<QString>)));
+    QObject::connect(mSettingsWindow, SIGNAL(addRSSSites(QList<QString>)), mRSS, SLOT(addRSSSites(QList<QString>)));
 
-    // RSS
-    mRefreshPixmap = QPixmap(":/images/refresh.png");
-    mCheckBoxSignalMapper = new QSignalMapper(this);
-    QObject::connect(mCheckBoxSignalMapper, SIGNAL(mapped(QString)), this, SLOT(checkBoxClicked(QString)));
+    mRSSWebViewDialog = new RSSWebViewDialog(this);
+    QObject::connect(mRSSWebViewDialog, SIGNAL(speedreadSelectedText(QString)), this, SLOT(rssWebViewDialogSpeedReadSelectedText(QString)));
+    QObject::connect(mRSSWebViewDialog, SIGNAL(closed()), this, SLOT(rssWebViewDialogClosed()));
 
-    mRSSReader = new VNTRSSReader();
-    QObject::connect(mRSSReader, SIGNAL(loadedRSS(QList<VNTRSSChannel*>)), this, SLOT(loadedRSS(QList<VNTRSSChannel*>)));
-
-    if (mSettings->getRSSUrls().size() == 0) mUI->showRSSCheckBox->clicked(false);
-    else mUI->showRSSCheckBox->setChecked(true);
-
-    this->updateReadLabel();
-
-    // Clipboard
     mClipBoard = QApplication::clipboard();
     QObject::connect(mClipBoard, SIGNAL(changed(QClipboard::Mode)), this, SLOT(changedSlot(QClipboard::Mode)));
     this->changedSlot(QClipboard::Clipboard);
 
-    // Network
-    mNetworkAccessManager = new QNetworkAccessManager(this);
-    QObject::connect(mNetworkAccessManager, SIGNAL(finished(QNetworkReply*)), this, SLOT(replyFinished(QNetworkReply*)));
+    mCheckForUpdates = new CheckForUpdates(coSiteSpeedReaderOSTXT, coSiteSpeedReaderOSZIP, this);
+    mCheckForUpdates->checkForUpdates(true);
 
     this->createLanguageMenu();
     this->updatedSettings();
+
+    #ifdef QT_DEBUG
+        this->setFixedWidth(1100);
+    #else
+        this->restoreGeometry(mSettings->getMainWindowGeometry());
+    #endif
+
+    QShortcut *speedReadFromClipBoardShortcut = new QShortcut(QKeySequence("Ctrl+R"), this);
+    QObject::connect(speedReadFromClipBoardShortcut, SIGNAL(activated()), this, SLOT(speedReadFromClipBoardShortcut()));
+
+    QShortcut *sShortcut = new QShortcut(QKeySequence("S"), this);
+    QObject::connect(sShortcut, SIGNAL(activated()), this, SLOT(sShortcut()));
+
+    QShortcut *cShortcut = new QShortcut(QKeySequence("C"), this);
+    QObject::connect(cShortcut, SIGNAL(activated()), this, SLOT(cShortcut()));
+
+    QShortcut *rShortcut = new QShortcut(QKeySequence("R"), this);
+    QObject::connect(rShortcut, SIGNAL(activated()), this, SLOT(rShortcut()));
+
+    QShortcut *aShortcut = new QShortcut(QKeySequence("A"), this);
+    QObject::connect(aShortcut, SIGNAL(activated()), this, SLOT(aShortcut()));
+
+    QShortcut *escapeShortcut = new QShortcut(QKeySequence("Esc"), this);
+    QObject::connect(escapeShortcut, SIGNAL(activated()), this, SLOT(escapeShortcut()));
 }
 
 MainWindow::~MainWindow() {
-    if (mSpeedReaderText != 0 && mSpeedReaderText->isRunning()) {
-        mSpeedReaderText->exit(0);
-        mSpeedReaderText->terminate();
-    }
-
-    delete mUI;
     delete mSettings;
-    delete mRSSReader;
-    delete mSettingsWindow;
-    delete mSpeedReaderText;
-    delete mNetworkAccessManager;
-    delete mCheckBoxSignalMapper;
 }
 
-void MainWindow::setReadingText(QString text) {
+void MainWindow::refreshNavigationDrawer() {
+    mNavigationDrawer->update(mRSS->getChannels(), mRSS->unspeedreadAllCount(), mRSS->unspeedreadTodayCount(), mRSS->unspeedreadYesterdayCount());
+}
+
+void MainWindow::setSpeedReadingText(QString text) {
     mUI->plainTextEdit->setPlainText(text);
 }
 
 void MainWindow::changedSlot(QClipboard::Mode mode) {
-    if (mode == QClipboard::Clipboard && mUI->pasteWidget->isVisible()) mUI->plainTextEdit->setPlainText(mClipBoard->text(mode));
+    if (mode == QClipboard::Clipboard && mUI->pasteWidget->isVisible() && !mSettingsWindow->isVisible()) this->setSpeedReadingText(mClipBoard->text(mode));
 }
 
-void MainWindow::replyFinished(QNetworkReply* networkReply) {
-    QString value = QString(networkReply->readAll());
-    delete networkReply;
-
-    if (value.isEmpty()) {
-        QMessageBox msgBox;
-        msgBox.setText(tr("Could not get information about latest version"));
-        msgBox.exec();
-
-        return;
-    }
-
-    if (value == APPLICATION_VERSION) {
-        QMessageBox msgBox;
-        msgBox.setText(tr("Your version is up to date"));
-        msgBox.exec();
-    } else if (value > APPLICATION_VERSION) {
-        QMessageBox messageBox(tr("Check for updates"), tr("New version %1 is available. Do you want to download it?").arg(value), QMessageBox::Question, QMessageBox::Yes | QMessageBox::Default, QMessageBox::No | QMessageBox::Escape, QMessageBox::NoButton, this);
-        messageBox.setButtonText(QMessageBox::Yes, tr("Yes"));
-        messageBox.setButtonText(QMessageBox::No, tr("No"));
-
-        if (messageBox.exec() == QMessageBox::Yes) {
-            QDesktopServices::openUrl(QUrl(coSiteSpeedReaderLatestOSZIP));
-        }
-    }
+void MainWindow::rssWebViewDialogSpeedReadSelectedText(QString text) {
+    this->speedreadText(text);
 }
 
-void MainWindow::rssWebViewDialogReadSelectedText(QString text) {
-    mUI->plainTextEdit->setPlainText(text);
-    this->on_readButton_clicked();
+void MainWindow::rssWebViewDialogClosed() {
+    mSettings->saveRSSWebViewDialogGeometry(mRSSWebViewDialog->saveGeometry());
 }
 
-void MainWindow::rssWebViewDialogGoSelectedText(QString text) {
-    mUI->plainTextEdit->setPlainText(text);
-    this->on_goButton_clicked();
+void MainWindow::updateSpeedReadLabelText(QString value) {
+    QPixmap pixmap(mUI->label->width(), mUI->label->height());
+    pixmap.fill(mSettings->getTextBackgroundColor());
+
+    QPainter paint(&pixmap);
+
+    QFont font(mSettings->getFontFamily());
+    font.setPixelSize(mSettings->getFontSize());
+    paint.setFont(font);
+    paint.setPen(mSettings->getTextColor());
+
+    QRectF textBoundaries;
+    paint.drawText(mUI->label->rect(), Qt::AlignCenter, value, &textBoundaries);
+
+    if (!value.isEmpty()) mOldTextBoundaries = textBoundaries;
+    else textBoundaries = mOldTextBoundaries;
+
+    const float size = 5.f;
+    float x = (float) mUI->label->width() / 8.f;
+    float width = (float) mUI->label->width() / 4.f * 3.f;
+    paint.fillRect(x, textBoundaries.y() - size * 2, width, size, mSettings->getLinesColor());
+    paint.fillRect(x, textBoundaries.y() + textBoundaries.height() + size * 2, width, size, mSettings->getLinesColor());
+
+    mUI->label->setPixmap(pixmap);
 }
 
 void MainWindow::updateSpeedReaderText(QString text) {
-    mSpeedReaderText = new SpeedReaderText(text);
-    QObject::connect(mSpeedReaderText, SIGNAL(changed(QString, int, SpeedReaderText::SpeedReaderStatus)), this, SLOT(changed(QString, int, SpeedReaderText::SpeedReaderStatus)));
-
-    mUI->progressBar->setValue(0);
-    mUI->startStopButton->setText(tr("Start"));
-    mUI->label->setText(tr("Press start to start reading"));
-
+    mSpeedReaderText.setText(text);
     this->updateStatusWidget();
 }
 
-void MainWindow::changed(QString text, int readTextInPercent, SpeedReaderText::SpeedReaderStatus status) {
-    mUI->label->setText(text);
-    mUI->progressBar->setValue(readTextInPercent);
-
-    if (status == SpeedReaderText::STOPPING) {
-        this->on_startStopButton_clicked();
-    } else if (status == SpeedReaderText::FINISHED) {
-        if (mSettings->jumpBackToStart()) {
-            this->on_cancelButton_clicked();
-        } else {
-            mUI->label->setText(tr("Finished"));
-            mUI->startStopButton->setText(tr("Restart"));
-
-            this->updateStatusWidget();
-            mUI->statusWidget->show();
-
-            mUI->actionSpeedReader->setEnabled(true);
-            mSpeedReaderText->resetReading();
-        }
+void MainWindow::changed(QString text, int speedreadTextInPercent, SpeedReaderText::SpeedReaderStatus status) {
+    if (status == SpeedReaderText::STOPPING) this->on_stopButton_clicked();
+    else if (status == SpeedReaderText::FINISHED) this->on_cancelButton_clicked();
+    else if (status == SpeedReaderText::SPEEDREADING) {
+        this->updateSpeedReadLabelText(text);
+        mUI->progressBar->setValue(speedreadTextInPercent);
     }
 }
 
 void MainWindow::updatedSettings() {
-    this->updateReadLabel();
-
     if (mSettings->changedHTTPNetworkProxy()) {
         switch (mSettings->getHTTPNetworkProxyType()) {
             case Settings::NO_HTTP_NETWORK_PROXY:
@@ -192,45 +202,11 @@ void MainWindow::updatedSettings() {
                 break;
         }
 
-        if (!mSettings->changedRSSUrls()) this->refreshRSSFeeds();
+        this->refreshButton_clicked();
     }
 
-    if (mSettings->changedRSSUrls()) {
-        this->refreshRSSFeeds();
-
-        bool notEmpty = mSettings->getRSSUrls().size() != 0;
-        mUI->showRSSCheckBox->clicked(notEmpty);
-        mUI->showRSSCheckBox->setChecked(notEmpty);
-    }
-
-    if (mSettings->changedNumberOfWords() || mSettings->changedWordsPerMinute() || mSettings->changedNumberGrouping() || mSettings->changedWords() || mSettings->changedDisplayLongerWordsLonger() || mSettings->changedStallAtIndentions()) {
-        if (!mUI->readWidget->isVisible() || mSpeedReaderText == 0) return;
-
-        QMessageBox messageBox(tr("Changed settings"), tr("You have changed some important reading settings. How do you want to proceed?"), QMessageBox::Question, QMessageBox::Yes, QMessageBox::No, QMessageBox::Cancel | QMessageBox::Escape | QMessageBox::Default, this);
-        messageBox.setButtonText(QMessageBox::Yes, tr("Restart completely"));
-        messageBox.setButtonText(QMessageBox::No, tr("Restart, but start with current word"));
-        messageBox.setButtonText(QMessageBox::Cancel, tr("Keep it as is"));
-
-        switch (messageBox.exec()) {
-            case QMessageBox::Yes:
-                this->updateSpeedReaderText(mSpeedReaderText->getText());
-                break;
-            case QMessageBox::No:
-                this->updateSpeedReaderText(mSpeedReaderText->getRemainingText());
-                break;
-            case QMessageBox::Cancel:
-                break;
-        }
-    }
+    if (mSettings->changedRSSRefreshRate()) mRSS->startRefreshRSSTimer(mSettings->getRSSRefreshRate());
 }
-
-void MainWindow::updateReadLabel() {
-    mUI->label->setFont(QFont(mSettings->getFontFamily(), mSettings->getFontSize()));
-    mUI->label->setStyleSheet("QLabel { background-color: " + mSettings->getTextBackgroundColor().name() + "; color: " + mSettings->getTextColor().name() + "}");
-}
-
-// Language stuff
-const QString INT_LANG_DIR = ":/languages/";
 
 void MainWindow::createLanguageMenu() {
     QActionGroup* langGroup = new QActionGroup(mUI->menuLanguage);
@@ -238,27 +214,16 @@ void MainWindow::createLanguageMenu() {
 
     QObject::connect(langGroup, SIGNAL(triggered(QAction*)), this, SLOT(slotLanguageChanged(QAction*)));
 
-    QString defaultLocale = QLocale::system().name();
-    defaultLocale.truncate(defaultLocale.lastIndexOf('_'));
+    QList<Language> languages = mI18N->getLanguages();
 
-    QDir dir(INT_LANG_DIR);
-    QStringList fileNames = dir.entryList(QStringList("*.qm"));
-
-    for (int i = 0; i < fileNames.size(); ++i) {
-        QString locale = fileNames[i];
-        locale.truncate(locale.lastIndexOf('.'));
-
-        QString lang = QLocale::languageToString(QLocale(locale).language());
-        QIcon ico(QString("%1%2.png").arg(INT_LANG_DIR).arg(locale));
-
-        QAction* action = new QAction(ico, lang, this);
+    foreach (Language language, languages) {
+        QAction* action = new QAction(QIcon(language.iconFilePath), language.name, langGroup);
         action->setCheckable(true);
-        action->setData(locale);
+        action->setData(language.locale);
 
         mUI->menuLanguage->addAction(action);
-        langGroup->addAction(action);
 
-        if (defaultLocale == locale) {
+        if (language.isDefault) {
             action->setChecked(true);
             this->slotLanguageChanged(action);
         }
@@ -266,37 +231,25 @@ void MainWindow::createLanguageMenu() {
 }
 
 void MainWindow::slotLanguageChanged(QAction* action) {
-    if (0 != action) this->loadLanguage(action->data().toString());
-}
-
-void switchTranslator(QTranslator& translator, const QString& filename) {
-    qApp->removeTranslator(&translator);
-
-    if (translator.load(filename, INT_LANG_DIR)) qApp->installTranslator(&translator);
-}
-
-void MainWindow::loadLanguage(const QString& language) {
-    if (mCurrLang != language) {
-        mCurrLang = language;
-        QLocale locale = QLocale(mCurrLang);
-        QLocale::setDefault(locale);
-        switchTranslator(mTranslator, QString("%1.qm").arg(language));
+    if (0 != action) {
+        QString locale = action->data().toString();
+        mI18N->loadLanguage(locale);
     }
 }
 
 void MainWindow::changeEvent(QEvent* event) {
     if (0 != event) {
         switch(event->type()) {
-            case QEvent::LanguageChange: // this event is send if a translator is loaded
+            case QEvent::LanguageChange: // this event is send if a translator is loaded (will be in I18N class)
                 mUI->retranslateUi(this);
                 mSettingsWindow->retranslate();
+                mRSSWebViewDialog->retranslate();
                 mUI->donateLabel->setText(QString("<h2><a href=\"%1\">%2</a></h2>").arg(coSiteDonate, tr("Donate")));
+                mUI->googlePlayStoreLabel->setText(QString("<a href=\"%1\"><img src='data:image/png;base64,%2'></a>").arg(coSiteSpeedReader + "Android", mI18N->getBase64GooglePlayStoreIconForCurrentLanguage()));
+                this->refreshNavigationDrawer();
                 break;
-            case QEvent::LocaleChange: { // this event is send, if the system language changes
-                    QString locale = QLocale::system().name();
-                    locale.truncate(locale.lastIndexOf('_'));
-                    loadLanguage(locale);
-                }
+            case QEvent::LocaleChange: // this event is send, if the system language changes
+                mI18N->onSystemLocalChanged();
                 break;
             default:
                 break;
@@ -306,9 +259,14 @@ void MainWindow::changeEvent(QEvent* event) {
     QMainWindow::changeEvent(event);
 }
 
-// Menu
+void MainWindow::closeEvent(QCloseEvent *event) {
+    mSettings->setMainWindowGeometry(this->saveGeometry());
+
+    QMainWindow::closeEvent(event);
+}
+
 void MainWindow::on_actionCheckForUpdates_triggered() {
-    mNetworkAccessManager->get(QNetworkRequest(QUrl(coSiteSpeedReaderLatestOSTXT)));
+    mCheckForUpdates->checkForUpdates();
 }
 
 void MainWindow::on_actionDonate_triggered() {
@@ -330,173 +288,194 @@ void MainWindow::on_actionSpeedReader_triggered() {
 }
 
 void MainWindow::on_actionAboutSpeedReader_triggered() {
-    QString text = QString("SpeedReader %1<br />%2 Vanniktech<br />Niklas Baudy<br /><a href=\"%3\">%4</a>").arg(APPLICATION_VERSION, tr("Published by"), coSiteSpeedReader, tr("More infos"));
-
     QMessageBox msgBox;
     msgBox.setTextFormat(Qt::RichText);
-    msgBox.setText(text);
+    msgBox.setText(QString("SpeedReader %1<br>%2 Vanniktech<br>Copyright 2014 - 2015 Vanniktech - Niklas Baudy<br><a href=\"%3\">%4</a>").arg(APPLICATION_VERSION, tr("Published by"), coSiteSpeedReader, tr("More information")));
     msgBox.exec();
 }
 
 void MainWindow::on_actionForkMeOnGitHub_triggered() {
-    QDesktopServices::openUrl(QUrl("https://github.com/vanniktech/SpeedReader"));
+    QDesktopServices::openUrl(QUrl(coSiteGitHub));
 }
 
-// Slots
-void MainWindow::on_startStopButton_clicked() {
-    if (mSpeedReaderText->isReading()) {
-        mSpeedReaderText->stopReading();
-        mUI->startStopButton->setText(tr("Start"));
+void MainWindow::speedReadFromClipBoardShortcut() {
+    this->setSpeedReadingText(QApplication::clipboard()->text());
+    this->on_speedreadButton_clicked();
+}
+
+void MainWindow::sShortcut() {
+    if (mUI->stackedWidget->currentIndex() == 0 && mUI->speedreadButton->isVisible()) this->on_speedreadButton_clicked();
+    else if (mUI->stackedWidget->currentIndex() == 1 && mUI->stopButton->isVisible()) this->on_stopButton_clicked();
+}
+
+void MainWindow::cShortcut() {
+    if (mUI->stackedWidget->currentIndex() == 0 && mUI->continueButton->isVisible()) this->on_continueButton_clicked();
+    else if (mUI->stackedWidget->currentIndex() == 1 && mUI->cancelButton->isVisible()) this->on_cancelButton_clicked();
+}
+
+void MainWindow::rShortcut() {
+    if (mUI->stackedWidget->currentIndex() == 0 && !mNavigationDrawer->isRefreshing()) this->refreshButton_clicked();
+}
+
+void MainWindow::aShortcut() {
+    if (mUI->stackedWidget->currentIndex() == 0) this->addRSSSiteButton_clicked();
+}
+
+void MainWindow::escapeShortcut() {
+    if (mUI->stackedWidget->currentIndex() == 1 && mUI->cancelButton->isVisible()) this->on_cancelButton_clicked();
+}
+
+void MainWindow::on_stopButton_clicked() {
+    if (mSpeedReaderText.stopSpeedReading()) {
+        mUI->continueButton->setVisible(true);
+        mUI->speedreadButton->setVisible(false);
+        mUI->stackedWidget->setCurrentIndex(0);
+        this->speedreadClicked();
         this->updateStatusWidget();
-        mUI->statusWidget->show();
-    } else {
-        mUI->statusWidget->hide();
-        mSpeedReaderText->continueReading();
 
-        if (!mSpeedReaderText->isRunning()) {
-            mSpeedReaderText->start();
-        }
-
-        mUI->startStopButton->setText(tr("Stop"));
+        mUI->actionSpeedReader->setEnabled(true);
     }
-
-    mUI->actionSpeedReader->setEnabled(!mSpeedReaderText->isReading());
 }
 
 void MainWindow::on_cancelButton_clicked() {
-    mSpeedReaderText->terminate();
+    mSpeedReaderText.terminate();
 
     mUI->stackedWidget->setCurrentIndex(0);
-    mUI->rssWidget->setVisible(mUI->showRSSCheckBox->isChecked());
 
     mUI->actionSpeedReader->setEnabled(true);
+    this->updateStatusWidget();
 }
 
-void MainWindow::on_readButton_clicked() {
+void MainWindow::on_continueButton_clicked() {
+    mUI->stackedWidget->setCurrentIndex(1);
+    mUI->continueButton->setVisible(false);
+    mUI->speedreadButton->setVisible(true);
+
+    mSpeedReaderText.continueSpeedReading();
+}
+
+void MainWindow::on_speedreadButton_clicked() {
     QString text = mUI->plainTextEdit->toPlainText();
     if (text.isEmpty()) text = QApplication::clipboard()->text();
 
+    this->speedreadText(text);
+}
+
+void MainWindow::addRSSSiteButton_clicked() {
+    bool ok;
+    QString text = QInputDialog::getText(this, tr("add_rss_site"), tr("insert_the_url_here"), QLineEdit::Normal, "", &ok);
+
+    if (ok) {
+        this->addRSSSite(QUrl::fromUserInput(text));
+    }
+}
+
+void MainWindow::addRSSSite(QUrl url) {
+    if (mSettings->appendRSSSite(url)) {
+        mRSS->load(url);
+    }
+}
+
+void MainWindow::refreshButton_clicked() {
+    mNavigationDrawer->startRefreshAnimation();
+    mRSS->loadAllRSSFeeds();
+}
+
+void MainWindow::on_rssListWidget_itemSelectionChanged() {
+    mRSS->markRSSItemAsSpeedRead(mUI->rssListWidget->row(mUI->rssListWidget->currentItem()));
+}
+
+void MainWindow::on_plainTextEdit_textChanged() {
+    QString plainText = mUI->plainTextEdit->toPlainText();
+
+    if (plainText != mSpeedReaderText.getText()) {
+        this->updateSpeedReaderText(mUI->plainTextEdit->toPlainText());
+        mUI->continueButton->setVisible(false);
+        mUI->speedreadButton->setVisible(true);
+    }
+}
+
+void MainWindow::speedreadText(QString text) {
     this->updateSpeedReaderText(text);
 
+    mUI->actionSpeedReader->setEnabled(false);
     mUI->stackedWidget->setCurrentIndex(1);
-    mUI->statusWidget->setVisible(true);
-}
+    mUI->progressBar->setValue(0);
 
-void MainWindow::on_goButton_clicked() {
-    this->on_readButton_clicked();
-    this->on_startStopButton_clicked();
-}
-
-void MainWindow::on_addRSSUrlButton_clicked() {
-    QUrl url = QUrl::fromUserInput(mUI->addRSSUrlLineEdit->text());
-
-    if (mSettings->appendRSSUrl(url)) {
-        mUI->addRSSUrlLineEdit->clear();
-        mRSSReader->load(url);
-    }
-}
-
-void MainWindow::on_refreshAllButton_clicked() {
-    this->refreshRSSFeeds();
-}
-
-void MainWindow::on_showRSSCheckBox_clicked(bool checked) {
-    mUI->rssWidget->setHidden(!checked);
-}
-
-void MainWindow::on_rssListWidget_itemClicked(QListWidgetItem* listWidgetItem) {
-    if (!mDoubleClicked) {
-        QTimer::singleShot(300, this, SLOT(itemClickedTimeout()));
-        mSingleClickedItem = listWidgetItem;
-    }
-}
-
-void MainWindow::itemClickedTimeout() {
-    if (!mDoubleClicked) mUI->plainTextEdit->setPlainText(mSingleClickedItem->text());
-    else mDoubleClicked = false;
-}
-
-void MainWindow::on_rssListWidget_itemDoubleClicked(QListWidgetItem* listWidgetItem) {
-    mDoubleClicked = true;
-
-    QUrl url = QUrl(listWidgetItem->data(Qt::UserRole).toString());
-    QDesktopServices::openUrl(url);
+    mSpeedReaderText.continueSpeedReading();
 }
 
 void MainWindow::updateStatusWidget() {
-    mUI->textEdit->setHtml(mSpeedReaderText->getHTMLColoredText());
-    mUI->textEdit->scrollToAnchor("myAnchorForCurrentWord");
+    mUI->textEdit->setHtml(mSpeedReaderText.getHTMLColoredText());
+    mUI->textEdit->scrollToAnchor(SpeedReaderText::HTML_ANCHOR_CURRENT_WORD);
 
-    mUI->segmentsStatusLabel->setText(QString("%1 / %2 %3").arg(QString::number(mSpeedReaderText->getIndex()), QString::number(mSpeedReaderText->getMaxIndex()), tr("segments read")));
-    mUI->stopWordsStatusLabel->setText(QString("%1 / %2 %3").arg(QString::number(mSpeedReaderText->getStopWordsRead()), QString::number(mSpeedReaderText->getStopWordsCount()), tr("stopwords read")));
-    mUI->estimatedRemainingReadingTimeLabel->setText(QString("%1 %2").arg(tr("Estimated reamining reading time:"), VNTFormatter::formatMilliseconds(mSpeedReaderText->getEstimatedTimeInMS())));
+    mUI->segmentsStatusLabel->setText(QString("%1 / %2 %3").arg(QString::number(mSpeedReaderText.getIndex()), QString::number(mSpeedReaderText.getMaxIndex()), tr("segments SpeedRead")));
+    mUI->stopWordsStatusLabel->setText(QString("%1 / %2 %3").arg(QString::number(mSpeedReaderText.getStopWordsRead()), QString::number(mSpeedReaderText.getStopWordsCount()), tr("stopwords SpeedRead")));
+    mUI->estimatedRemainingSpeedReadingTimeLabel->setText(QString("%1 %2").arg(tr("Estimated remaining SpeedReading time:"), VNTFormatter::formatMilliseconds(mSpeedReaderText.getEstimatedTimeInMS())));
 }
 
-void MainWindow::refreshRSSFeeds() {
-    mUI->rssListWidget->clear();
-    mIdListWidgetItemMultiMap.clear();
-
-    while (QLayoutItem* item = mUI->checkBoxRSSLayout->takeAt(0)) {
-        delete item->widget();
-        delete item;
-    }
-
-    QList<QUrl> rssUrls = mSettings->getRSSUrls();
-
-    if (rssUrls.size() == 0) this->addRSSFeedDefaultEntry();
-    else mRSSReader->load(rssUrls);
+void MainWindow::openInWebView(QUrl url) {
+    mRSSWebViewDialog->load(url);
+    mRSSWebViewDialog->restoreGeometry(mSettings->getRSSWebViewDialogGeometry());
+    mRSSWebViewDialog->show();
+    mRSSWebViewDialog->raise();
+    mRSSWebViewDialog->activateWindow();
 }
 
-void MainWindow::addRSSFeedDefaultEntry() {
-    mUI->rssListWidget->addItem(this->getListWidgetItem(tr("Default entry"), tr("If you want, you can quite easily add some RSS feeds via the settings menu or the add button above."), QUrl("http://vanniktech.de/"), QIcon(":/icon.png")));
+void MainWindow::openInDefaultWebBrowser(QUrl url) {
+    QDesktopServices::openUrl(url);
 }
 
-QListWidgetItem* MainWindow::getListWidgetItem(QString title, QString description, QUrl url, QIcon icon) {
-    QListWidgetItem* listWidgetItem = new QListWidgetItem(QString("%1\n%2").arg(title, description));
-    listWidgetItem->setTextAlignment(Qt::AlignLeft | Qt::AlignTop);
-    listWidgetItem->setFlags(Qt::ItemIsSelectable | Qt::ItemIsEnabled);
-    listWidgetItem->setIcon(icon);
-    listWidgetItem->setData(Qt::UserRole, url);
-
-    return listWidgetItem;
+void MainWindow::rssDataChanged() {
+    mNavigationDrawer->stopRefreshAnimation();
+    this->refreshNavigationDrawer();
 }
 
-void MainWindow::addListWidgetItem(QString key, QString title, QString description, QUrl url, QImage image) {
-    QListWidgetItem* listWidgetItem = this->getListWidgetItem(title, description, url, QPixmap::fromImage(image));
-    mUI->rssListWidget->addItem(listWidgetItem);
-    mIdListWidgetItemMultiMap.insert(key, listWidgetItem);
+void MainWindow::failedToOpenDatabase() {
+    QMessageBox::critical(this, tr("RSS database"), tr("Could not be loaded and opened."));
 }
 
-void MainWindow::checkBoxClicked(QString id) {
-    QList<QListWidgetItem*> listWidgets = mIdListWidgetItemMultiMap.values(id);
-
-    foreach (QListWidgetItem* item, listWidgets) item->setHidden(!item->isHidden());
+void MainWindow::failedToLoadRSSChannel(QString errorMessage) {
+    QMessageBox::warning(this, tr("Loading RSS feed"), errorMessage);
 }
 
-void MainWindow::loadedRSS(QList<VNTRSSChannel*> rssChannels) {
-    foreach (VNTRSSChannel* rssChannel, rssChannels) {
-        if (rssChannel->hasError()) {
-            QMessageBox::warning(this, tr("Loading RSS feed"), rssChannel->getErrorMessage());
-            delete rssChannel;
-            continue;
-        } else if (rssChannel->getTitle().isEmpty() || rssChannel->getRSSUrl().isEmpty()) {
-            delete rssChannel;
-            continue;
-        }
+void MainWindow::speedreadClicked() {
+    mUI->rssWidget->hide();
+    mUI->pasteWidget->show();
+    mUI->statusWidget->show();
 
-        QString key = QString::number(qrand());
-        this->addListWidgetItem(key, rssChannel->getTitle(), rssChannel->getPlainDescription(), rssChannel->getRSSUrl(), rssChannel->getImage());
+    mRSS->resetRSSSelectionData();
+}
 
-        QList<VNTRSSItem*> items = rssChannel->getItems();
-        foreach (VNTRSSItem* item, items) this->addListWidgetItem(key, item->getTitle(), item->getPlainDescription(), item->getGuid() == "" ? item->getLink() : item->getGuid(), item->getImage());
+void MainWindow::allClicked() {
+    if (mRSS->getRSSSelectionData().selection != ALL) this->showRSSListView(ALL);
+}
 
-        QCheckBox* checkBox = new QCheckBox(rssChannel->getTitle());
-        checkBox->setChecked(true);
-        mUI->checkBoxRSSLayout->addWidget(checkBox);
+void MainWindow::unspeedreadClicked() {
+    if (mRSS->getRSSSelectionData().selection != UNSPEEDREAD) this->showRSSListView(UNSPEEDREAD);
+}
 
-        QObject::connect(checkBox, SIGNAL(stateChanged(int)), mCheckBoxSignalMapper, SLOT(map()));
-        mCheckBoxSignalMapper->setMapping(checkBox, key);
+void MainWindow::todayClicked() {
+    if (mRSS->getRSSSelectionData().selection != TODAY) this->showRSSListView(TODAY);
+}
 
-        delete rssChannel;
-    }
+void MainWindow::yesterdayClicked() {
+    if (mRSS->getRSSSelectionData().selection != YESTERDAY) this->showRSSListView(YESTERDAY);
+}
+
+void MainWindow::rssSiteClicked(QString rssSite) {
+    QUrl rss(rssSite);
+
+    if (mRSS->getRSSSelectionData().selection != SITE || rss != mRSS->getRSSSelectionData().rssSite) this->showRSSListView(SITE, rss);
+}
+
+void MainWindow::showRSSListView(RSSSelection rssSelection, QUrl rssSelectionRSSSite) {
+    mUI->rssWidget->show();
+    mUI->pasteWidget->hide();
+    mUI->statusWidget->hide();
+
+    RSSSelectionData rssSelectionData;
+    rssSelectionData.selection = rssSelection;
+    rssSelectionData.rssSite = rssSelectionRSSSite;
+    mRSS->refreshRSSList(rssSelectionData);
 }

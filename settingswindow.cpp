@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -21,9 +21,14 @@
 #include "ui_settingswindow.h"
 
 #include <QFontDatabase>
+#include <QMessageBox>
 
 SettingsWindow::SettingsWindow(QWidget* parent) : QDialog(parent), mUI(new Ui::SettingsWindow) {
     mUI->setupUi(this);
+
+    #ifdef QT_DEBUG
+        this->setFixedWidth(1100);
+    #endif
 
     mSettings = Settings::getInstance();
 
@@ -33,19 +38,44 @@ SettingsWindow::SettingsWindow(QWidget* parent) : QDialog(parent), mUI(new Ui::S
         mUI->fontFamilyComboBox->addItem(family);
     }
 
+    int i = 0;
+    const int rssRefreshRate = mSettings->getRSSRefreshRate();
+    QMap<int, QString> rssRefreshRates = Settings::RSS_REFRESH_RATES;
+    QMap<int, QString>::iterator it;
+
+    for (it = rssRefreshRates.begin(); it != rssRefreshRates.end(); ++it, i++) {
+        mUI->rssRefreshRateComboBox->addItem(it.value(), QVariant(it.key()));
+
+        if (rssRefreshRate == it.key()) {
+            mUI->rssRefreshRateComboBox->setCurrentIndex(i);
+        }
+    }
+
+    mUI->wordsPerMinuteSpinBox->setMinimum(Settings::MIN_WORDS_PER_MINUTE);
+    mUI->wordsPerMinuteSpinBox->setMaximum(Settings::MAX_WORDS_PER_MINUTE);
+
+    mUI->numberOfWordsSpinBox->setMinimum(Settings::MIN_NUMBER_OF_WORDS);
+    mUI->numberOfWordsSpinBox->setMaximum(Settings::MAX_NUMBER_OF_WORDS);
+
+    mUI->wordLengthSpinBox->setMinimum(Settings::MIN_WORD_LENGTH);
+    mUI->wordLengthSpinBox->setMaximum(Settings::MAX_WORD_LENGTH);
+
+    mUI->fontSizeSpinBox->setMinimum(Settings::MIN_FONT_SIZE);
+    mUI->fontSizeSpinBox->setMaximum(Settings::MAX_FONT_SIZE);
+
     mUI->numberOfWordsSpinBox->setValue(mSettings->getNumberOfWords());
     mUI->wordsPerMinuteSpinBox->setValue(mSettings->getWordsPerMinute());
-    mUI->displayLongerWordsCheckBox->setChecked(mSettings->displayLongerWordsLonger());
-    this->on_displayLongerWordsCheckBox_clicked(mSettings->displayLongerWordsLonger());
+    mUI->displayLongerWordsCheckBox->setChecked(mSettings->shouldDisplayLongerWordsLonger());
+    this->on_displayLongerWordsCheckBox_clicked(mSettings->shouldDisplayLongerWordsLonger());
     mUI->wordLengthSpinBox->setValue(mSettings->getWordLength());
     mUI->fontSizeSpinBox->setValue(mSettings->getFontSize());
     mUI->fontFamilyComboBox->setCurrentText(mSettings->getFontFamily());
-    mUI->numberGroupingCheckBox->setChecked(mSettings->numberGrouping());
-    mUI->jumpBackToStartCheckBox->setChecked(mSettings->jumpBackToStart());
-    mUI->stallAtIndentionsCheckBox->setChecked(mSettings->stallAtIndentions());
+    mUI->numberGroupingCheckBox->setChecked(mSettings->shouldGroupNumbers());
+    mUI->stallAtIndentionsCheckBox->setChecked(mSettings->shouldStallAtIndentions());
 
     this->changeBackground(mUI->textColorFrame, mSettings->getTextColor());
     this->changeBackground(mUI->textBackgroundColorFrame, mSettings->getTextBackgroundColor());
+    this->changeBackground(mUI->linesColorFrame, mSettings->getLinesColor());
 
     QList<Word> words = mSettings->getWords();
     mUI->wordsTableWidget->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
@@ -80,13 +110,14 @@ void SettingsWindow::showEvent(QShowEvent* event) {
     Q_UNUSED(event);
 
     mSynchronized = false;
+    mDeleteAllRSSSites = false;
+    mAddedRSSSites.clear();
+    mDeletedRSSSites.clear();
 
-    QList<QUrl> rssUrls = mSettings->getRSSUrls();
-    mUI->rssListWidget->clear();
+    QList<QUrl> rssSites = mSettings->getRSSSites();
+    mUI->rssSiteListWidget->clear();
 
-    foreach (QUrl url, rssUrls) {
-        mUI->rssListWidget->addItem(url.toString());
-    }
+    foreach (QUrl url, rssSites) mUI->rssSiteListWidget->addItem(url.toString());
 }
 
 void SettingsWindow::retranslate() {
@@ -101,6 +132,10 @@ void SettingsWindow::on_changeTextBackgroundColorPushButton_clicked() {
     mSettings->setTextBackgroundColor(this->changeColorButtonClicked(mSettings->getTextBackgroundColor(), mUI->textBackgroundColorFrame));
 }
 
+void SettingsWindow::on_changeLinesColorPushButton_clicked() {
+    mSettings->setLinesColor(this->changeColorButtonClicked(mSettings->getLinesColor(), mUI->linesColorFrame));
+}
+
 QColor SettingsWindow::changeColorButtonClicked(QColor initialColor, QFrame* frame) {
     QColor color = QColorDialog::getColor(initialColor, this);
 
@@ -112,35 +147,58 @@ QColor SettingsWindow::changeColorButtonClicked(QColor initialColor, QFrame* fra
 }
 
 void SettingsWindow::on_wordAddButton_clicked() {
-    QString word = mUI->wordLineEdit->text();
+    QString wordValue = mUI->wordLineEdit->text();
 
-    if (word.trimmed().length() == 0) return;
+    if (wordValue.trimmed().length() == 0) return;
 
-    for (int i = 0; i < mUI->wordsTableWidget->rowCount(); i++) if (mUI->wordsTableWidget->item(i, 0)->text() == word) return;
+    for (int i = 0; i < mUI->wordsTableWidget->rowCount(); i++) if (mUI->wordsTableWidget->item(i, 0)->text() == wordValue) return;
 
-    this->addTableRow(Word(word, false, false, 0));
+    Word word;
+    word.word = wordValue;
+    word.stopWord = false;
+    word.breakWord = false;
+    word.delayWord = 0;
+
+    this->addTableRow(word);
     mUI->wordLineEdit->setText("");
 }
 
-void SettingsWindow::on_wordRemoveButton_clicked() {
+void SettingsWindow::on_wordDeleteButton_clicked() {
     mUI->wordsTableWidget->removeRow(mUI->wordsTableWidget->currentRow());
 }
 
-void SettingsWindow::on_rssUrlAddButton_clicked() {
-    QString value = mUI->rssUrlLineEdit->text();
+void SettingsWindow::on_wordDeleteAllButton_clicked() {
+    if (this->areYouSureMessageBox(tr("Delete all words"), tr("Are you sure you want to delete all words?")) == QMessageBox::Yes) mUI->wordsTableWidget->setRowCount(0);
+}
+
+void SettingsWindow::on_rssSiteAddButton_clicked() {
+    QString value = mUI->rssSiteLineEdit->text();
 
     if (value.trimmed().length() == 0) return;
 
-    QUrl url = QUrl::fromUserInput(value);
+    QString url = QUrl::fromUserInput(value).toString();
 
-    for (int i = 0; i < mUI->rssListWidget->count(); i++) if (mUI->rssListWidget->item(i)->text() == url.toString()) return;
+    for (int i = 0; i < mUI->rssSiteListWidget->count(); i++) if (mUI->rssSiteListWidget->item(i)->text() == url) return;
 
-    mUI->rssListWidget->addItem(url.toString());
-    mUI->rssUrlLineEdit->setText("");
+    mUI->rssSiteListWidget->addItem(url);
+    mAddedRSSSites.append(url);
+    mUI->rssSiteLineEdit->setText("");
 }
 
-void SettingsWindow::on_rssUrlRemoveButton_clicked() {
-    qDeleteAll(mUI->rssListWidget->selectedItems());
+void SettingsWindow::on_rssSiteDeleteButton_clicked() {
+    QList<QListWidgetItem*> selectedItems = mUI->rssSiteListWidget->selectedItems();
+
+    foreach (QListWidgetItem* listWidgetItem, selectedItems) {
+        mDeletedRSSSites.append(listWidgetItem->text());
+        delete listWidgetItem;
+    }
+}
+
+void SettingsWindow::on_rssSiteDeleteAllButton_clicked() {
+    if (this->areYouSureMessageBox(tr("Delete all RSS sites"), tr("Are you sure you want to delete all RSS sites?")) == QMessageBox::Yes) {
+        mUI->rssSiteListWidget->clear();
+        mDeleteAllRSSSites = true;
+    }
 }
 
 void SettingsWindow::done(int r) {
@@ -159,29 +217,33 @@ void SettingsWindow::synchronizeWithSettings() {
     QList<Word> words;
 
     for (int i = 0; i < mUI->wordsTableWidget->rowCount(); i++) {
-        Word word = Word(mUI->wordsTableWidget->item(i, 0)->text(), mUI->wordsTableWidget->item(i, 1)->checkState() == Qt::Checked, mUI->wordsTableWidget->item(i, 2)->checkState() == Qt::Checked, qMax(0, mUI->wordsTableWidget->item(i, 3)->text().toInt()));
+        Word word;
+        word.word = mUI->wordsTableWidget->item(i, 0)->text();
+        word.stopWord = mUI->wordsTableWidget->item(i, 1)->checkState() == Qt::Checked;
+        word.breakWord = mUI->wordsTableWidget->item(i, 2)->checkState() == Qt::Checked;
+        word.delayWord = qMax(0, mUI->wordsTableWidget->item(i, 3)->text().toInt());
         words.append(word);
     }
 
     mSettings->setWords(words);
 
-    QList<QUrl> rssUrls;
+    QList<QUrl> rssSites;
 
-    for (int i = 0; i < mUI->rssListWidget->count(); ++i) {
-        rssUrls.append(QUrl::fromUserInput(mUI->rssListWidget->item(i)->text()));
+    for (int i = 0; i < mUI->rssSiteListWidget->count(); ++i) {
+        rssSites.append(QUrl::fromUserInput(mUI->rssSiteListWidget->item(i)->text()));
     }
 
-    mSettings->setRSSUrls(rssUrls);
+    mSettings->setRSSSites(rssSites);
 
     mSettings->setFontFamily(mUI->fontFamilyComboBox->currentText());
     mSettings->setFontSize(mUI->fontSizeSpinBox->value());
-    mSettings->setDisplayLongerWordsLonger(mUI->displayLongerWordsCheckBox->isChecked());
+    mSettings->setShouldDisplayLongerWordsLonger(mUI->displayLongerWordsCheckBox->isChecked());
     mSettings->setWordLength(mUI->wordLengthSpinBox->value());
     mSettings->setNumberOfWords(mUI->numberOfWordsSpinBox->value());
     mSettings->setWordsPerMinute(mUI->wordsPerMinuteSpinBox->value());
-    mSettings->setNumberGrouping(mUI->numberGroupingCheckBox->isChecked());
-    mSettings->setJumpBackToStart(mUI->jumpBackToStartCheckBox->isChecked());
-    mSettings->setStallAtIndentions(mUI->stallAtIndentionsCheckBox->isChecked());
+    mSettings->setShouldGroupNumbers(mUI->numberGroupingCheckBox->isChecked());
+    mSettings->setShouldStallAtIndentions(mUI->stallAtIndentionsCheckBox->isChecked());
+    mSettings->setRSSRefreshRate(mUI->rssRefreshRateComboBox->currentData().value<int>());
 
     if (mUI->radioButtonNoHTTPNetworkProxy->isChecked()) {
         mSettings->setHTTPNetworkProxyType(Settings::NO_HTTP_NETWORK_PROXY);
@@ -199,6 +261,11 @@ void SettingsWindow::synchronizeWithSettings() {
     }
 
     mSettings->synchronize();
+
+    if (mDeleteAllRSSSites) emit deleteAllRSSSites();
+    else emit deleteRSSSites(mDeletedRSSSites);
+
+    emit addRSSSites(mAddedRSSSites);
 }
 
 void SettingsWindow::changeBackground(QFrame* frame, QColor backgroundColor) {
@@ -245,4 +312,16 @@ void SettingsWindow::setCustomHTTPNetworkProxyInputsEnabled(bool enabled) {
 
 void SettingsWindow::on_displayLongerWordsCheckBox_clicked(bool checked) {
     mUI->wordLengthSpinBox->setEnabled(checked);
+}
+
+void SettingsWindow::on_deleteCachePushButton_clicked() {
+    if (this->areYouSureMessageBox(tr("Delete cache"), tr("Are you sure you want to delete the cache? This includes all offline saved RSS feeds and it's images.")) == QMessageBox::Yes) emit deleteRSSCache();
+}
+
+int SettingsWindow::areYouSureMessageBox(QString title, QString message) {
+    QMessageBox messageBox(title, message, QMessageBox::Question, QMessageBox::Yes | QMessageBox::Default, QMessageBox::No | QMessageBox::Escape, QMessageBox::NoButton, this);
+    messageBox.setButtonText(QMessageBox::Yes, tr("Yes"));
+    messageBox.setButtonText(QMessageBox::No, tr("No"));
+
+    return messageBox.exec();
 }

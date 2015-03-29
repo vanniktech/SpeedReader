@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -25,7 +25,7 @@
 class SpeedReaderSegment
 {
 public:
-    SpeedReaderSegment(QString value, bool containsStopWord, int displayTime);
+    SpeedReaderSegment(const QString& value, const bool& containsStopWord, const int& displayTime);
 
     QString getValue() const;
     bool isStopWordContained() const;

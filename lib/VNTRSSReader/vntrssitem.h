@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of VNTRSSReader.
 
@@ -22,13 +22,20 @@
 
 #include <QString>
 
-#include "lib/VNTRSSReader/vntrsscommon.h"
+#include "vntrsscommon.h"
 
 class VNTRSSItem : public VNTRSSCommon {
-public:
-    VNTRSSItem(QString link, QString title, QString description, QString pubDate, QString category, QString guid, QString imageUrl);
+    Q_OBJECT
 
+public:
+    VNTRSSItem();
+
+    Q_INVOKABLE void setDescription(const QString &description);
+
+    Q_INVOKABLE void setGuid(const QString &guid);
     QString getGuid() const;
+
+    Q_INVOKABLE void setCategory(const QString &category);
     QString getCategory() const;
 
     QString toString() const;

@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -26,11 +26,20 @@
 #include <QUrl>
 #include <QNetworkProxy>
 #include <QMap>
+#include <QTime>
 
-#include "word.h"
 #include "speedreadersegment.h"
+#include "initializableqmap.h"
+#include "speedreadertextdatasource.h"
 
-class Settings : public QObject {
+struct Word {
+    QString word;
+    bool stopWord;
+    bool breakWord;
+    int delayWord;
+};
+
+class Settings : public QObject, public SpeedReaderTextDataSource {
         Q_OBJECT
 
     signals:
@@ -41,13 +50,21 @@ class Settings : public QObject {
         static const int USE_SYSTEM_HTTP_NETWORK_PROXY_CONFIGURATION = 1;
         static const int CUSTOM_HTTP_NETWORK_PROXY = 2;
 
-        static const int DOUBLE_CLICK_RSS_FEED_OPEN_INTERNALLY = 0;
-        static const int DOUBLE_CLICK_RSS_FEED_OPEN_EXTERNALLY = 1;
+        static const int MIN_FONT_SIZE = 8;
+        static const int MAX_FONT_SIZE = 100;
+
+        static const int MIN_NUMBER_OF_WORDS = 1;
+        static const int MAX_NUMBER_OF_WORDS = 10;
+
+        static const int MIN_WORDS_PER_MINUTE = 100;
+        static const int MAX_WORDS_PER_MINUTE = 3000;
+
+        static const int MIN_WORD_LENGTH = 5;
+        static const int MAX_WORD_LENGTH = 20;
+
+        static const InitializableQMap<int, QString> RSS_REFRESH_RATES;
 
         static Settings* getInstance();
-
-        QList<SpeedReaderSegment> dissectText(QString text);
-        int getReadingTimePerMinuteInMs();
 
         void synchronize();
 
@@ -55,29 +72,24 @@ class Settings : public QObject {
         void setTextColor(QColor textColor);
         QColor getTextBackgroundColor();
         void setTextBackgroundColor(QColor textBackgroundColor);
+        QColor getLinesColor();
+        void setLinesColor(QColor lineColor);
         QString getFontFamily();
         void setFontFamily(QString fontFamily);
-        bool displayLongerWordsLonger();
-        void setDisplayLongerWordsLonger(bool displayLongerWordsLonger);
+        bool shouldDisplayLongerWordsLonger();
+        void setShouldDisplayLongerWordsLonger(bool shouldDisplayLongerWordsLonger);
         int getWordLength();
         void setWordLength(int wordLength);
-        bool changedDisplayLongerWordsLonger();
         int getFontSize();
         void setFontSize(int fontSize);
         int getNumberOfWords();
         void setNumberOfWords(int numberOfWords);
-        bool changedNumberOfWords();
         int getWordsPerMinute();
         void setWordsPerMinute(int wordsPerMinute);
-        bool changedWordsPerMinute();
-        bool numberGrouping();
-        void setNumberGrouping(bool numberGrouping);
-        bool changedNumberGrouping();
-        bool jumpBackToStart();
-        void setJumpBackToStart(bool jumpBackToStart);
-        bool changedStallAtIndentions();
-        bool stallAtIndentions();
-        void setStallAtIndentions(bool stallAtIndentions);
+        bool shouldGroupNumbers();
+        void setShouldGroupNumbers(bool shouldGroupNumbers);
+        bool shouldStallAtIndentions();
+        void setShouldStallAtIndentions(bool shouldStallAtIndentions);
         bool changedHTTPNetworkProxy();
         int getHTTPNetworkProxyType();
         void setHTTPNetworkProxyType(int httpNetworkProxyType);
@@ -86,13 +98,28 @@ class Settings : public QObject {
 
         QList<Word> getWords();
         void setWords(QList<Word> stopWords);
-        bool changedWords();
 
-        QList<QUrl> getRSSUrls();
-        void setRSSUrls(QList<QUrl> rssUrls);
-        bool changedRSSUrls();
-        bool appendRSSUrl(QUrl rssUrl);
+        QList<QString> getBreakWords();
+        QList<QString> getStopWords();
+        QMap<QString, int> getDelayWords();
 
+        QList<QUrl> getRSSSites();
+        void setRSSSites(QList<QUrl> rssSites);
+        bool appendRSSSite(QUrl rssSite);
+
+        bool changedRSSRefreshRate();
+        void setRSSRefreshRate(int rssRefreshRate);
+        int getRSSRefreshRate();
+
+        bool autoUpdate();
+        void setAutoUpdateTomorrow();
+        void setAutoUpdateNeverEver();
+
+        void setMainWindowGeometry(const QByteArray& geometry);
+        QByteArray getMainWindowGeometry() const;
+
+        void saveRSSWebViewDialogGeometry(const QByteArray& geometry);
+        QByteArray getRSSWebViewDialogGeometry() const;
     private:
         Settings();
         Settings(Settings const&);
@@ -101,36 +128,36 @@ class Settings : public QObject {
 
         QColor  mTextColor;
         QColor  mTextBackgroundColor;
+        QColor  mLinesColor;
         QString mFontFamily;
         int mFontSize;
         bool mDisplayLongerWordsLonger;
         int mWordLength;
-        bool mChangedDisplayLongerWordsLonger;
         int mNumberOfWords;
-        bool mChangedNumberOfWords;
         int mWordsPerMinute;
-        bool mChangedWordsPerMinute;
         bool mNumberGrouping;
-        bool mChangedNumberGrouping;
-        bool mJumpBackToStart;
-        bool mChangedStallAtIndentions;
         bool mStallAtIndentions;
         int mHTTPNetworkProxyType;
         QNetworkProxy mHTTPNetworkProxy;
         bool mChangedHTTPNetworkProxy;
 
         QList<Word> mWords;
-        bool mChangedWords;
         QList<QString> mStopWords;
         QList<QString> mBreakWords;
         QMap<QString, int> mDelayWords;
-        QList<QUrl> mRSSUrls;
-        bool mChangedRSSUrls;
+        QList<QUrl> mRSSSites;
+        int mRSSRefreshRate;
+        bool mChangedRSSRefreshRate;
 
-        void appendWord(QString value, bool stopWord, bool breakWord, int delayWord);
-        SpeedReaderSegment getSpeedReaderSegment(QString value);
-        bool stringContainsStopWord(QString value);
-        QString prepareTextForDissecting(QString text);
+        void appendWord(Word word);
+
+        uint mAutoUpdate;
+        void syncAutoUpdate();
+
+        QByteArray mMainWindowGeometry;
+        QByteArray mRSSWebViewDialogGeometry;
+
+        int minMaxValue(int min, int max, int value);
 };
 
 #endif // SETTINGS_H

@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of VNTRSSReader.
 
@@ -24,28 +24,38 @@
 #include <QList>
 #include <QUrl>
 
-#include "lib/VNTRSSReader/vntrssitem.h"
-#include "lib/VNTRSSReader/vntrsscommon.h"
+#include "vntrssitem.h"
+#include "vntrsscommon.h"
 
 class VNTRSSChannel : public VNTRSSCommon {
+    Q_OBJECT
+
 public:
-    VNTRSSChannel(QString link, QString title, QString description, QString pubdate, QString language, QString copyright, QString imageUrl, QUrl rssUrl, QString errorMessage, QList<VNTRSSItem*> items);
+    VNTRSSChannel();
     ~VNTRSSChannel();
 
+    Q_INVOKABLE void setLanguage(const QString &language);
     QString getLanguage() const;
-    QString getCopyright() const;
-    QUrl    getRSSUrl() const;
-    QString getErrorMessage() const;
-    bool    hasError() const;
 
-    QList<VNTRSSItem *> getItems() const;
+    Q_INVOKABLE void setCopyright(const QString &copyright);
+    QString getCopyright() const;
+
+    void setRSSSite(QUrl rssSite);
+    QUrl getRSSSite() const;
+
+    void setErrorMessage(const QString &errorMessage);
+    QString getErrorMessage() const;
+    bool hasError() const;
+
+    void addItem(VNTRSSItem* item);
+    QList<VNTRSSItem *> getRSSItems() const;
 
     QString toString() const;
 
 private:
     QString mLanguage;
     QString mCopyright;
-    QUrl    mRSSUrl;
+    QUrl    mRSSSite;
     QString mErrorMessage;
     QList<VNTRSSItem*> mItems;
 };

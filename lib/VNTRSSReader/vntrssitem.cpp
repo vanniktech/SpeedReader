@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of VNTRSSReader.
 
@@ -21,21 +21,32 @@
 
 #include "vntrssitem.h"
 
-VNTRSSItem::VNTRSSItem(QString link, QString title, QString description, QString pubDate, QString category, QString guid, QString imageUrl) : VNTRSSCommon(title, description, pubDate, link, QUrl()){
-    mCategory = category.simplified();
-    mGuid = guid.simplified();
+VNTRSSItem::VNTRSSItem() : VNTRSSCommon() {
 
-    if (imageUrl.isNull()) {
-        QRegExp imageRegex("src=\"(http://|https://)(www)?[a-zA-Z0-9\\+\\$\\=\\%\\^\\&\\!\\-\\#\\_\\?./]+\"");
+}
 
-        if (imageRegex.indexIn(mDescription) != -1) imageUrl = imageRegex.cap().remove("src=\"").remove('"');
+void VNTRSSItem::setDescription(const QString &description) {
+    VNTRSSCommon::setDescription(description);
+
+    if (mImageUrl.isEmpty()) {
+        QRegExp imageRegex("src=\"?(http://|https://)(www)?[a-zA-Z0-9~\\+\\$\\=\\%\\^\\&\\!\\-\\#\\_\\?./]+(\\.jpg|\\.JPG|\\.png|\\.PNG|\\.jpeg|\\.JPEG)\"?");
+
+        if (imageRegex.indexIn(description) != -1) {
+            this->setImageUrl(imageRegex.cap().remove("src=").remove('"'));
+        }
     }
+}
 
-    mImageUrl = QUrl(imageUrl);
+void VNTRSSItem::setGuid(const QString &guid) {
+    mGuid = guid.simplified();
 }
 
 QString VNTRSSItem::getGuid() const {
     return mGuid;
+}
+
+void VNTRSSItem::setCategory(const QString &category) {
+    mCategory = category.simplified();
 }
 
 QString VNTRSSItem::getCategory() const {
@@ -43,5 +54,5 @@ QString VNTRSSItem::getCategory() const {
 }
 
 QString VNTRSSItem::toString() const {
-    return VNTRSSCommon::toString().append(QString("category=%1\nguid=%2").arg(mCategory, mGuid));
+    return VNTRSSCommon::toString().append(QString("\ncategory=%1\nguid=%2").arg(mCategory, mGuid));
 }

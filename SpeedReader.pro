@@ -1,5 +1,5 @@
 #-------------------------------------------------
-# Copyright 2014 Vanniktech - Niklas Baudy
+# Copyright 2014-2015 Vanniktech - Niklas Baudy
 #
 # This file is part of SpeedReader.
 #
@@ -19,6 +19,8 @@
 
 QT       += core gui
 QT       += network
+QT       += webkit webkitwidgets
+QT       += sql
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
 
@@ -28,7 +30,7 @@ OBJECTS_DIR = .obj
 MOC_DIR     = .moc
 RCC_DIR     = .rcc
 
-VERSION = $$system(git describe --tags --abbrev=0)
+VERSION = v1.4.0
 
 DEFINES += APPLICATION_VERSION=\\\"$${VERSION}\\\"
 DEFINES += APPLICATION_NAME=\\\"SpeedReader\\\"
@@ -47,32 +49,64 @@ mac {
 RESOURCES += resources.qrc
 
 TRANSLATIONS = languages/en.ts \
-               languages/de.ts
+               languages/de.ts \
+               languages/cs.ts
 
 SOURCES += main.cpp\
         mainwindow.cpp \
     speedreadertext.cpp \
-    lib/vntformatter.cpp \
-    word.cpp \
     lib/VNTRSSReader/vntrsschannel.cpp \
+    lib/VNTRSSReader/vntrsscommon.cpp \
     lib/VNTRSSReader/vntrssitem.cpp \
     lib/VNTRSSReader/vntrssreader.cpp \
+    lib/VNTRSSReader/vntprotocolhandler.cpp \
+    lib/VNTRSSReader/vntatomhandler.cpp \
+    lib/VNTRSSReader/vntrsshandler.cpp \
     settingswindow.cpp \
     settings.cpp\
     speedreadersegment.cpp \
-    lib/VNTRSSReader/vntrsscommon.cpp
+    rsswebviewdialog.cpp \
+    rssitem.cpp \
+    databasehelper.cpp \
+    row.cpp \
+    checkforupdates.cpp \
+    rss.cpp \
+    rssdata.cpp \
+    thread.cpp \
+    navigationdrawer.cpp \
+    i18n.cpp
 
 HEADERS  += mainwindow.h \
     speedreadertext.h \
     lib/vntformatter.h \
-    word.h \
     lib/VNTRSSReader/vntrsschannel.h \
+    lib/VNTRSSReader/vntrsscommon.h \
     lib/VNTRSSReader/vntrssitem.h \
     lib/VNTRSSReader/vntrssreader.h \
+    lib/VNTRSSReader/vntprotocolhandler.h \
+    lib/VNTRSSReader/vntatomhandler.h \
+    lib/VNTRSSReader/vntrsshandler.h \
+    lib/VNTRSSReader/vntprotocolspecialcase.h \
     settingswindow.h \
     settings.h\
     speedreadersegment.h \
-    lib/VNTRSSReader/vntrsscommon.h
+    rsswebviewdialog.h \
+    rssitem.h \
+    databasehelper.h \
+    row.h \
+    checkforupdates.h \
+    rss.h \
+    rssdata.h \
+    rssselectiondata.h \
+    thread.h \
+    navigationdrawer.h \
+    rsschannel.h \
+    i18n.h \
+    initializableqmap.h \
+    speedreadertextdatasource.h
 
 FORMS    += mainwindow.ui \
-    settingswindow.ui
+    settingswindow.ui \
+    rsswebviewdialog.ui
+
+CONFIG += c++11

@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -20,45 +20,65 @@
 #include "settings.h"
 
 #include <QFontDatabase>
-#include <QRegularExpression>
 #include <QSettings>
+
+const InitializableQMap<int, QString> Settings::RSS_REFRESH_RATES = InitializableQMap<int, QString>()
+<< QPair<int, QString>(0, tr("never"))
+<< QPair<int, QString>(300000, tr("5 minutes"))
+<< QPair<int, QString>(600000, tr("10 minutes"))
+<< QPair<int, QString>(900000, tr("15 minutes"))
+<< QPair<int, QString>(1800000, tr("30 minutes"))
+<< QPair<int, QString>(3600000, tr("1 hour"))
+<< QPair<int, QString>(7200000, tr("2 hours"))
+<< QPair<int, QString>(14400000, tr("4 hours"))
+<< QPair<int, QString>(28800000, tr("8 hours"))
+<< QPair<int, QString>(43200000, tr("12 hours"))
+<< QPair<int, QString>(86400000, tr("24 hours"));
 
 Settings* Settings::mInstance = 0;
 
-const QString CO_TEXT_COLOR = "textColor";
-const QString CO_TEXT_BACKGROUND_COLOR = "textBackgroundColor";
-const QString CO_FONT_FAMILY = "fontFamily";
-const QString CO_FONT_SIZE = "fontSize";
-const QString CO_DISPLAY_LONGER_WORDS_LONGER = "displayLongerWordsLonger";
-const QString CO_WORD_LENGTH = "wordLength";
-const QString CO_NUMBER_OF_WORDS = "numberOfWords";
-const QString CO_WORDS_PER_MINUTE = "wordsPerMinute";
-const QString CO_NUMBER_GROUPING = "numberGrouping";
-const QString CO_JUMP_BACK_TO_START = "jumpBackToStart";
-const QString CO_STALL_AT_INDENTIONS = "stallAtIndentions";
-const QString CO_WORDS = "words";
-const QString CO_WORD = "word";
-const QString CO_RSS_URLS = "rss_urls";
-const QString CO_RSS_URL = "rss_url";
-const QString CO_VALUE = "value";
-const QString CO_STOP_WORD = "stopWord";
-const QString CO_BREAK_WORD = "breakWord";
-const QString CO_DELAY_WORD = "delayWord";
-const QString CO_HTTP_NETWORK_PROXY_TYPE = "httpNetworkProxyType";
-const QString CO_HTTP_NETWORK_PROXY_SERVER = "httpNetworkProxyServer";
-const QString CO_HTTP_NETWORK_PROXY_PORT = "httpNetworkProxyPort";
+const QString SETTINGS_TEXT_COLOR = "textColor";
+const QString SETTINGS_TEXT_BACKGROUND_COLOR = "textBackgroundColor";
+const QString SETTINGS_LINES_COLOR = "linesColor";
+const QString SETTINGS_FONT_FAMILY = "fontFamily";
+const QString SETTINGS_FONT_SIZE = "fontSize";
+const QString SETTINGS_DISPLAY_LONGER_WORDS_LONGER = "displayLongerWordsLonger";
+const QString SETTINGS_WORD_LENGTH = "wordLength";
+const QString SETTINGS_NUMBER_OF_WORDS = "numberOfWords";
+const QString SETTINGS_WORDS_PER_MINUTE = "wordsPerMinute";
+const QString SETTINGS_NUMBER_GROUPING = "numberGrouping";
+const QString SETTINGS_STALL_AT_INDENTIONS = "stallAtIndentions";
+const QString SETTINGS_WORDS = "words";
+const QString SETTINGS_WORD = "word";
+const QString SETTINGS_RSS_SITES = "rss_urls";
+const QString SETTINGS_RSS_SITE = "rss_url";
+const QString SETTINGS_VALUE = "value";
+const QString SETTINGS_STOP_WORD = "stopWord";
+const QString SETTINGS_BREAK_WORD = "breakWord";
+const QString SETTINGS_DELAY_WORD = "delayWord";
+const QString SETTINGS_HTTP_NETWORK_PROXY_TYPE = "httpNetworkProxyType";
+const QString SETTINGS_HTTP_NETWORK_PROXY_SERVER = "httpNetworkProxyServer";
+const QString SETTINGS_HTTP_NETWORK_PROXY_PORT = "httpNetworkProxyPort";
+const QString SETTINGS_OPEN_EXTERNALLY_RSS_FEED_ITEM = "openExternallyRSSFeedItem";
+const QString SETTINGS_RSS_REFRESH_RATE = "rssRefreshRate";
+const QString SETTINGS_AUTO_UPDATE = "autoUpdate" + QString(APPLICATION_VERSION);
+const QString SETTINGS_MAIN_WINDOW_GEOMETRY = "mainWindowGeometry";
+const QString SETTINGS_RSS_WEB_VIEW_DIALOG_GEOMETRY = "settingsRSSWebViewDialogGeometry";
 
-const int MIN_FONT_SIZE = 8;
-const int MAX_FONT_SIZE = 100;
-
-const int MIN_NUMBER_OF_WORDS = 1;
-const int MAX_NUMBER_OF_WORDS = 10;
-
-const int MIN_WORDS_PER_MINUTE = 300;
-const int MAX_WORDS_PER_MINUTE = 3000;
-
-const int MIN_WORDS_LENGTH = 5;
-const int MAX_WORDS_LENGTH = 20;
+const int FONT_SIZE_DEFAULT = 35;
+const bool DISPLAY_LONGER_WORDS_LONGER_DEFAULT = true;
+const int WORD_LENGTH_DEFAULT = 8;
+const int NUMBER_OF_WORDS = 1;
+const bool NUMER_GROUPING_DEFAULT = true;
+const bool STALL_AT_INDENTIONS_DEFAULT = true;
+const int WORDS_PER_MINUTE = 300;
+const QColor TEXT_BACKGROUND_COLOR_DEFAULT = QColor(255, 255, 255);
+const QColor TEXT_COLOR_DEFAULT = QColor(0, 0, 0);
+const QColor LINES_COLOR_DEFAULT = QColor(28, 153, 255);
+const QString HTTP_NETWORK_PROXY_SERVER_DEFAULT = "proxy";
+const int HTTP_NETWORK_PROXY_PORT_DEFAULT = 8080;
+const int HTTP_NETWORK_PROXY_TYPE_DEFAULT = Settings::USE_SYSTEM_HTTP_NETWORK_PROXY_CONFIGURATION;
+const int RSS_REFRESH_RATE_DEFAULT = Settings::RSS_REFRESH_RATES.lastKey();
 
 Settings* Settings::getInstance() {
     if (!mInstance) {
@@ -70,159 +90,96 @@ Settings* Settings::getInstance() {
 
 Settings::Settings() {
     QSettings settings;
-    this->setFontSize(settings.value(CO_FONT_SIZE, 35).toInt());
-    this->setFontFamily(settings.value(CO_FONT_FAMILY, QFontDatabase().families()[0]).toString());
-    this->setDisplayLongerWordsLonger(settings.value(CO_DISPLAY_LONGER_WORDS_LONGER, true).toBool());
-    this->setWordLength(settings.value(CO_WORD_LENGTH, 8).toInt());
-    this->setNumberGrouping(settings.value(CO_NUMBER_GROUPING, true).toBool());
-    this->setJumpBackToStart(settings.value(CO_JUMP_BACK_TO_START, false).toBool());
-    this->setStallAtIndentions(settings.value(CO_STALL_AT_INDENTIONS, true).toBool());
-    this->setNumberOfWords(settings.value(CO_NUMBER_OF_WORDS, 1).toInt());
-    this->setWordsPerMinute(settings.value(CO_WORDS_PER_MINUTE, 300).toInt());
-    this->setTextBackgroundColor(settings.value(CO_TEXT_BACKGROUND_COLOR, QColor(255, 255, 255)).value<QColor>());
-    this->setTextColor(settings.value(CO_TEXT_COLOR, QColor(0, 0, 0)).value<QColor>());
+    this->setFontSize(settings.value(SETTINGS_FONT_SIZE, FONT_SIZE_DEFAULT).toInt());
+    this->setFontFamily(settings.value(SETTINGS_FONT_FAMILY, QFontDatabase().families()[0]).toString());
+    this->setShouldDisplayLongerWordsLonger(settings.value(SETTINGS_DISPLAY_LONGER_WORDS_LONGER, DISPLAY_LONGER_WORDS_LONGER_DEFAULT).toBool());
+    this->setWordLength(settings.value(SETTINGS_WORD_LENGTH, WORD_LENGTH_DEFAULT).toInt());
+    this->setShouldGroupNumbers(settings.value(SETTINGS_NUMBER_GROUPING, NUMER_GROUPING_DEFAULT).toBool());
+    this->setShouldStallAtIndentions(settings.value(SETTINGS_STALL_AT_INDENTIONS, STALL_AT_INDENTIONS_DEFAULT).toBool());
+    this->setNumberOfWords(settings.value(SETTINGS_NUMBER_OF_WORDS, NUMBER_OF_WORDS).toInt());
+    this->setWordsPerMinute(settings.value(SETTINGS_WORDS_PER_MINUTE, WORDS_PER_MINUTE).toInt());
+    this->setTextBackgroundColor(settings.value(SETTINGS_TEXT_BACKGROUND_COLOR, TEXT_BACKGROUND_COLOR_DEFAULT).value<QColor>());
+    this->setTextColor(settings.value(SETTINGS_TEXT_COLOR, TEXT_COLOR_DEFAULT).value<QColor>());
+    this->setLinesColor(settings.value(SETTINGS_LINES_COLOR, LINES_COLOR_DEFAULT).value<QColor>());
     mHTTPNetworkProxy.setType(QNetworkProxy::HttpProxy);
-    mHTTPNetworkProxy.setHostName(settings.value(CO_HTTP_NETWORK_PROXY_SERVER, "proxy").value<QString>());
-    mHTTPNetworkProxy.setPort(settings.value(CO_HTTP_NETWORK_PROXY_PORT, 8080).value<quint16>());
-    this->setHTTPNetworkProxyType(settings.value(CO_HTTP_NETWORK_PROXY_TYPE, Settings::USE_SYSTEM_HTTP_NETWORK_PROXY_CONFIGURATION).value<int>());
+    mHTTPNetworkProxy.setHostName(settings.value(SETTINGS_HTTP_NETWORK_PROXY_SERVER, HTTP_NETWORK_PROXY_SERVER_DEFAULT).value<QString>());
+    mHTTPNetworkProxy.setPort(settings.value(SETTINGS_HTTP_NETWORK_PROXY_PORT, HTTP_NETWORK_PROXY_PORT_DEFAULT).value<quint16>());
+    this->setHTTPNetworkProxyType(settings.value(SETTINGS_HTTP_NETWORK_PROXY_TYPE, HTTP_NETWORK_PROXY_TYPE_DEFAULT).value<int>());
+    this->setRSSRefreshRate(settings.value(SETTINGS_RSS_REFRESH_RATE, RSS_REFRESH_RATE_DEFAULT).value<int>());
+    mAutoUpdate = settings.value(SETTINGS_AUTO_UPDATE, 1).value<int>();
+    mMainWindowGeometry = settings.value(SETTINGS_MAIN_WINDOW_GEOMETRY, QByteArray()).value<QByteArray>();
+    mRSSWebViewDialogGeometry = settings.value(SETTINGS_RSS_WEB_VIEW_DIALOG_GEOMETRY, QByteArray()).value<QByteArray>();
 
-    int size = settings.beginReadArray(CO_WORDS);
+    int size = settings.beginReadArray(SETTINGS_WORDS);
     for (int i = 0; i < size; i++) {
         settings.setArrayIndex(i);
 
-        QString word = settings.value(CO_VALUE).toString();
-        bool stopWord = settings.value(CO_STOP_WORD).toBool();
-        bool breakWord = settings.value(CO_BREAK_WORD).toBool();
-        int delayWord = qMax(0, settings.value(CO_DELAY_WORD, 0).toInt());
-        this->appendWord(word, stopWord, breakWord, delayWord);
+        Word word;
+        word.word = settings.value(SETTINGS_VALUE).toString();
+        word.stopWord = settings.value(SETTINGS_STOP_WORD).toBool();
+        word.breakWord = settings.value(SETTINGS_BREAK_WORD).toBool();
+        word.delayWord = qMax(0, settings.value(SETTINGS_DELAY_WORD, 0).toInt());
+        this->appendWord(word);
     }
 
     settings.endArray();
 
-    size = settings.beginReadArray(CO_RSS_URLS);
+    size = settings.beginReadArray(SETTINGS_RSS_SITES);
     for (int i = 0; i < size; i++) {
         settings.setArrayIndex(i);
-        this->appendRSSUrl(settings.value(CO_RSS_URL).value<QUrl>());
+
+        QUrl url = settings.value(SETTINGS_RSS_SITE).value<QUrl>();
+        if (url.isValid() && !mRSSSites.contains(url)) mRSSSites.append(url);
     }
 
     settings.endArray();
 
-    mChangedWords = mChangedRSSUrls = true;
+    mChangedRSSRefreshRate = mChangedHTTPNetworkProxy = true;
 }
 
 void Settings::synchronize() {
     QSettings settings;
 
-    settings.setValue(CO_TEXT_COLOR, mTextColor);
-    settings.setValue(CO_TEXT_BACKGROUND_COLOR, mTextBackgroundColor);
-    settings.setValue(CO_FONT_FAMILY, mFontFamily);
-    settings.setValue(CO_FONT_SIZE, mFontSize);
-    settings.setValue(CO_DISPLAY_LONGER_WORDS_LONGER, mDisplayLongerWordsLonger);
-    settings.setValue(CO_WORD_LENGTH, mWordLength);
-    settings.setValue(CO_NUMBER_OF_WORDS, mNumberOfWords);
-    settings.setValue(CO_WORDS_PER_MINUTE, mWordsPerMinute);
-    settings.setValue(CO_NUMBER_GROUPING, mNumberGrouping);
-    settings.setValue(CO_JUMP_BACK_TO_START, mJumpBackToStart);
-    settings.setValue(CO_HTTP_NETWORK_PROXY_TYPE, mHTTPNetworkProxyType);
-    settings.setValue(CO_HTTP_NETWORK_PROXY_SERVER, mHTTPNetworkProxy.hostName());
-    settings.setValue(CO_HTTP_NETWORK_PROXY_PORT, mHTTPNetworkProxy.port());
+    settings.setValue(SETTINGS_TEXT_COLOR, mTextColor);
+    settings.setValue(SETTINGS_TEXT_BACKGROUND_COLOR, mTextBackgroundColor);
+    settings.setValue(SETTINGS_LINES_COLOR, mLinesColor);
+    settings.setValue(SETTINGS_FONT_FAMILY, mFontFamily);
+    settings.setValue(SETTINGS_FONT_SIZE, mFontSize);
+    settings.setValue(SETTINGS_DISPLAY_LONGER_WORDS_LONGER, mDisplayLongerWordsLonger);
+    settings.setValue(SETTINGS_WORD_LENGTH, mWordLength);
+    settings.setValue(SETTINGS_NUMBER_OF_WORDS, mNumberOfWords);
+    settings.setValue(SETTINGS_WORDS_PER_MINUTE, mWordsPerMinute);
+    settings.setValue(SETTINGS_NUMBER_GROUPING, mNumberGrouping);
+    settings.setValue(SETTINGS_HTTP_NETWORK_PROXY_TYPE, mHTTPNetworkProxyType);
+    settings.setValue(SETTINGS_HTTP_NETWORK_PROXY_SERVER, mHTTPNetworkProxy.hostName());
+    settings.setValue(SETTINGS_HTTP_NETWORK_PROXY_PORT, mHTTPNetworkProxy.port());
+    settings.setValue(SETTINGS_RSS_REFRESH_RATE, mRSSRefreshRate);
 
-    settings.beginWriteArray(CO_WORDS);
+    settings.beginWriteArray(SETTINGS_WORDS);
     settings.remove("");
 
     for (int i = 0; i < mWords.count(); i++) {
         settings.setArrayIndex(i);
-        settings.setValue(CO_VALUE, mWords.at(i).word);
-        settings.setValue(CO_STOP_WORD, mWords.at(i).stopWord);
-        settings.setValue(CO_BREAK_WORD, mWords.at(i).breakWord);
-        settings.setValue(CO_DELAY_WORD, mWords.at(i).delayWord);
+        settings.setValue(SETTINGS_VALUE, mWords.at(i).word);
+        settings.setValue(SETTINGS_STOP_WORD, mWords.at(i).stopWord);
+        settings.setValue(SETTINGS_BREAK_WORD, mWords.at(i).breakWord);
+        settings.setValue(SETTINGS_DELAY_WORD, mWords.at(i).delayWord);
     }
 
     settings.endArray();
 
-    settings.beginWriteArray(CO_RSS_URLS);
+    settings.beginWriteArray(SETTINGS_RSS_SITES);
     settings.remove("");
 
-    for (int i = 0; i < mRSSUrls.count(); i++) {
+    for (int i = 0; i < mRSSSites.count(); i++) {
         settings.setArrayIndex(i);
-        settings.setValue(CO_RSS_URL, mRSSUrls.at(i));
+        settings.setValue(SETTINGS_RSS_SITE, mRSSSites.at(i));
     }
 
     settings.endArray();
     settings.sync();
 
     emit updatedSettings();
-}
-
-QString Settings::prepareTextForDissecting(QString text) {
-    QString value;
-    text = text.replace("\t", " ").trimmed();
-
-    for (int i = 0; i < text.length(); i++) {
-        QChar c = text.at(i);
-        bool notAtEnd = i + 1 < text.length();
-
-        if ((c != ' ' && c != '\n') || (c == ' ' && notAtEnd && text.at(i + 1) != ' ') || (c == '\n' && notAtEnd && text.at(i + 1) != '\n')) value.append(c);
-    }
-
-    return value;
-}
-
-QList<SpeedReaderSegment> Settings::dissectText(QString text) {
-    const char seperator = ' ';
-    int counter = 0;
-    text = mStallAtIndentions ? this->prepareTextForDissecting(text) : text.simplified().trimmed();
-
-    QList<SpeedReaderSegment> dissectedText = QList<SpeedReaderSegment>();
-    QString tmpText = QString();
-
-    for(int i = 0; i < text.length(); i++) {
-        bool indention = mStallAtIndentions && text[i] == '\n';
-
-        if ((text[i] == seperator && ++counter == mNumberOfWords) || indention) {
-            dissectedText.append(this->getSpeedReaderSegment(tmpText));
-            if (indention) dissectedText.append(this->getSpeedReaderSegment(""));
-            tmpText.clear();
-            counter = 0;
-            continue;
-        }
-
-        tmpText.append(text[i]);
-
-        foreach (QString breakWord, mBreakWords) {
-            if (tmpText.contains(breakWord)) {
-                dissectedText.append(this->getSpeedReaderSegment(tmpText));
-                tmpText.clear();
-                counter = 0;
-                break;
-            }
-        }
-    }
-
-    if (tmpText.trimmed().length() != 0) dissectedText.append(this->getSpeedReaderSegment(tmpText));
-
-    if (mNumberGrouping) {
-        QRegularExpression regularExPressionNumber("[0-9]+");
-        bool isLastNumber = false;
-
-        for (int i = 0; i < dissectedText.length(); i++) {
-            SpeedReaderSegment currentSegment = dissectedText[i];
-            bool isNumber = currentSegment.getValue().contains(regularExPressionNumber);
-
-            if (isNumber && isLastNumber) {
-                SpeedReaderSegment beforeSegment = dissectedText[i - 1];
-                dissectedText.removeAt(i - 1);
-                dissectedText.removeAt(i - 1);
-
-                dissectedText.insert(i - 1, this->getSpeedReaderSegment(beforeSegment.getValue() + seperator + currentSegment.getValue()));
-                i--;
-            }
-
-            isLastNumber = isNumber;
-        }
-    }
-
-    return dissectedText;
 }
 
 QColor Settings::getTextColor() {
@@ -241,6 +198,14 @@ void Settings::setTextBackgroundColor(QColor textBackgroundColor) {
     mTextBackgroundColor = textBackgroundColor;
 }
 
+QColor Settings::getLinesColor() {
+    return mLinesColor;
+}
+
+void Settings::setLinesColor(QColor lineColor) {
+    mLinesColor = lineColor;
+}
+
 QString Settings::getFontFamily() {
     return mFontFamily;
 }
@@ -256,21 +221,14 @@ int Settings::getFontSize() {
 }
 
 void Settings::setFontSize(int fontSize) {
-    if (fontSize < MIN_FONT_SIZE) {
-        fontSize = MIN_FONT_SIZE;
-    } else if (fontSize > MAX_FONT_SIZE) {
-        fontSize = MAX_FONT_SIZE;
-    }
-
-    mFontSize = fontSize;
+    mFontSize = this->minMaxValue(MIN_FONT_SIZE, MAX_FONT_SIZE, fontSize);
 }
 
-bool Settings::displayLongerWordsLonger() {
+bool Settings::shouldDisplayLongerWordsLonger() {
     return mDisplayLongerWordsLonger;
 }
 
-void Settings::setDisplayLongerWordsLonger(bool displayLongerWordsLonger) {
-    mChangedDisplayLongerWordsLonger = mDisplayLongerWordsLonger != displayLongerWordsLonger;
+void Settings::setShouldDisplayLongerWordsLonger(bool displayLongerWordsLonger) {
     mDisplayLongerWordsLonger = displayLongerWordsLonger;
 }
 
@@ -279,18 +237,7 @@ int Settings::getWordLength() {
 }
 
 void Settings::setWordLength(int wordLength) {
-    if (wordLength < MIN_WORDS_LENGTH) {
-        wordLength = MIN_WORDS_LENGTH;
-    } else if (wordLength > MAX_WORDS_LENGTH) {
-        wordLength = MAX_WORDS_LENGTH;
-    }
-
-    mChangedDisplayLongerWordsLonger = mWordLength != wordLength;
-    mWordLength = wordLength;
-}
-
-bool Settings::changedDisplayLongerWordsLonger() {
-    return mChangedDisplayLongerWordsLonger;
+    mWordLength = this->minMaxValue(MIN_WORD_LENGTH, MAX_WORD_LENGTH, wordLength);
 }
 
 int Settings::getNumberOfWords() {
@@ -298,18 +245,7 @@ int Settings::getNumberOfWords() {
 }
 
 void Settings::setNumberOfWords(int numberOfWords) {
-    if (numberOfWords < MIN_NUMBER_OF_WORDS) {
-        numberOfWords = MIN_NUMBER_OF_WORDS;
-    } else if (numberOfWords > MAX_NUMBER_OF_WORDS) {
-        numberOfWords = MAX_NUMBER_OF_WORDS;
-    }
-
-    mChangedNumberOfWords = mNumberOfWords != numberOfWords;
-    mNumberOfWords = numberOfWords;
-}
-
-bool Settings::changedNumberOfWords() {
-    return mChangedNumberOfWords;
+    mNumberOfWords = this->minMaxValue(MIN_NUMBER_OF_WORDS, MAX_NUMBER_OF_WORDS, numberOfWords);
 }
 
 int Settings::getWordsPerMinute() {
@@ -317,51 +253,22 @@ int Settings::getWordsPerMinute() {
 }
 
 void Settings::setWordsPerMinute(int wordsPerMinute) {
-    if (wordsPerMinute < MIN_WORDS_PER_MINUTE) {
-        wordsPerMinute = MIN_WORDS_PER_MINUTE;
-    } else if (wordsPerMinute > MAX_WORDS_PER_MINUTE) {
-        wordsPerMinute = MAX_WORDS_PER_MINUTE;
-    }
-
-    mChangedWordsPerMinute = mWordsPerMinute != wordsPerMinute;
-    mWordsPerMinute = wordsPerMinute;
+    mWordsPerMinute = this->minMaxValue(MIN_WORDS_PER_MINUTE, MAX_WORDS_PER_MINUTE, wordsPerMinute);
 }
 
-bool Settings::changedWordsPerMinute() {
-    return mChangedWordsPerMinute;
-}
-
-bool Settings::numberGrouping() {
+bool Settings::shouldGroupNumbers() {
     return mNumberGrouping;
 }
 
-void Settings::setNumberGrouping(bool numberGrouping) {
-    mChangedNumberGrouping = mNumberGrouping != numberGrouping;
-    mNumberGrouping = numberGrouping;
+void Settings::setShouldGroupNumbers(bool shouldGroupNumbers) {
+    mNumberGrouping = shouldGroupNumbers;
 }
 
-bool Settings::changedNumberGrouping() {
-    return mChangedNumberGrouping;
-}
-
-bool Settings::jumpBackToStart() {
-    return mJumpBackToStart;
-}
-
-void Settings::setJumpBackToStart(bool jumpBackToStart) {
-    mJumpBackToStart = jumpBackToStart;
-}
-
-bool Settings::changedStallAtIndentions() {
-    return mChangedStallAtIndentions;
-}
-
-bool Settings::stallAtIndentions() {
+bool Settings::shouldStallAtIndentions() {
     return mStallAtIndentions;
 }
 
-void Settings::setStallAtIndentions(bool stallAtIndentions) {
-    mChangedStallAtIndentions = mStallAtIndentions != stallAtIndentions;
+void Settings::setShouldStallAtIndentions(bool stallAtIndentions) {
     mStallAtIndentions = stallAtIndentions;
 }
 
@@ -397,30 +304,19 @@ QList<Word> Settings::getWords() {
     return mWords;
 }
 
-bool Settings::changedWords() {
-    return mChangedWords;
+QList<QString> Settings::getBreakWords() {
+    return mBreakWords;
+}
+
+QList<QString> Settings::getStopWords() {
+    return mStopWords;
+}
+
+QMap<QString, int> Settings::getDelayWords() {
+    return mDelayWords;
 }
 
 void Settings::setWords(QList<Word> words) {
-    mChangedWords = mWords.size() != words.size();
-
-    if (!mChangedWords) {
-        bool changed = false;
-        for (int i = 0; i < words.size(); i++) {
-            Word w1 = words.at(i);
-            Word w2 = mWords.at(i);
-
-            if (!w1.equals(w2)) {
-                changed = true;
-                break;
-            }
-        }
-
-        mChangedWords = changed;
-    }
-
-    if (!mChangedWords) return;
-
     mWords = words;
 
     mStopWords = QList<QString>();
@@ -437,60 +333,36 @@ void Settings::setWords(QList<Word> words) {
 }
 
 
-QList<QUrl> Settings::getRSSUrls() {
-    return mRSSUrls;
+QList<QUrl> Settings::getRSSSites() {
+    return mRSSSites;
 }
 
-void Settings::setRSSUrls(QList<QUrl> rssUrls) {
-    mChangedRSSUrls = mRSSUrls.size() != rssUrls.size();
-
-    if (!mChangedRSSUrls) {
-        bool changed = false;
-        for (int i = 0; i < rssUrls.size(); i++) {
-            if (rssUrls.at(i) != mRSSUrls.at(i)) {
-                changed = true;
-                break;
-            }
-        }
-
-        mChangedRSSUrls = changed;
-    }
-
-    if (!mChangedRSSUrls) return;
-
-    mRSSUrls = rssUrls;
+void Settings::setRSSSites(QList<QUrl> rssSites) {
+    mRSSSites = rssSites;
 }
 
-bool Settings::changedRSSUrls() {
-    return mChangedRSSUrls;
+void Settings::appendWord(Word word) {
+    if (word.word.isEmpty()) return;
+
+    foreach (Word mWord, mWords) if (mWord.word == word.word) return;
+
+    mWords.append(word);
+
+    if (word.stopWord) mStopWords.append(word.word);
+    if (word.breakWord) mBreakWords.append(word.word);
+    if (word.delayWord > 0) mDelayWords.insert(word.word, word.delayWord);
 }
 
-int Settings::getReadingTimePerMinuteInMs() {
-    return (60 * 1000) * mNumberOfWords / mWordsPerMinute;
-}
-
-void Settings::appendWord(QString value, bool stopWord, bool breakWord, int delayWord) {
-    if (value.isEmpty()) return;
-
-    foreach (Word word, mWords) if (word.word == value) return;
-
-    mWords.append(Word(value, stopWord, breakWord, delayWord));
-
-    if (stopWord) mStopWords.append(value);
-    if (breakWord) mBreakWords.append(value);
-    if (delayWord > 0) mDelayWords.insert(value, delayWord);
-}
-
-bool Settings::appendRSSUrl(QUrl rssUrl) {
-    if (rssUrl.isValid() && !mRSSUrls.contains(rssUrl)) {
-        mRSSUrls.append(rssUrl);
+bool Settings::appendRSSSite(QUrl rssSite) {
+    if (rssSite.isValid() && !mRSSSites.contains(rssSite)) {
+        mRSSSites.append(rssSite);
 
         QSettings settings;
-        int index = settings.beginReadArray(CO_RSS_URLS);
+        int index = settings.beginReadArray(SETTINGS_RSS_SITES);
         settings.endArray();
-        settings.beginWriteArray(CO_RSS_URLS);
+        settings.beginWriteArray(SETTINGS_RSS_SITES);
         settings.setArrayIndex(index + 1);
-        settings.setValue(CO_RSS_URL, rssUrl);
+        settings.setValue(SETTINGS_RSS_SITE, rssSite);
         settings.endArray();
 
         return true;
@@ -499,21 +371,66 @@ bool Settings::appendRSSUrl(QUrl rssUrl) {
     return false;
 }
 
-SpeedReaderSegment Settings::getSpeedReaderSegment(QString value) {
-    int readingTime = this->getReadingTimePerMinuteInMs();
-    int wordLength = mWordLength * mNumberOfWords;
-    int valueLength = value.length() - mNumberOfWords + 1; // ignore whitespaces
 
-    if (mDisplayLongerWordsLonger && wordLength < valueLength) readingTime = (int) ((float) readingTime * ((float) valueLength / (float) wordLength));
-
-    QMap<QString, int>::iterator it;
-    for (it = mDelayWords.begin(); it != mDelayWords.end(); ++it) readingTime += it.value() * value.count(it.key());
-
-    return SpeedReaderSegment(value, this->stringContainsStopWord(value), readingTime);
+bool Settings::changedRSSRefreshRate() {
+    return mChangedRSSRefreshRate;
 }
 
-bool Settings::stringContainsStopWord(QString value) {
-    foreach (QString stopWord, mStopWords) if (value.contains(stopWord)) return true;
+void Settings::setRSSRefreshRate(int rssRefreshRate) {
+    if (!RSS_REFRESH_RATES.contains(rssRefreshRate)) rssRefreshRate = RSS_REFRESH_RATE_DEFAULT;
 
-    return false;
+    mChangedRSSRefreshRate = mRSSRefreshRate != rssRefreshRate;
+    mRSSRefreshRate = rssRefreshRate;
+}
+
+int Settings::getRSSRefreshRate() {
+    return mRSSRefreshRate;
+}
+
+bool Settings::autoUpdate() {
+    return mAutoUpdate != 0 && QDateTime::currentMSecsSinceEpoch() / 1000L >= mAutoUpdate;
+}
+
+void Settings::setAutoUpdateTomorrow() {
+    mAutoUpdate = QDateTime::currentDateTime().addDays(1).toTime_t();
+    this->syncAutoUpdate();
+}
+
+void Settings::setAutoUpdateNeverEver() {
+    mAutoUpdate = 0;
+    this->syncAutoUpdate();
+}
+
+void Settings::syncAutoUpdate() {
+    QSettings settings;
+    settings.setValue(SETTINGS_AUTO_UPDATE, mAutoUpdate);
+    settings.sync();
+}
+
+void Settings::setMainWindowGeometry(const QByteArray& geometry) {
+    mMainWindowGeometry = geometry;
+
+    QSettings settings;
+    settings.setValue(SETTINGS_MAIN_WINDOW_GEOMETRY, mMainWindowGeometry);
+    settings.sync();
+}
+
+QByteArray Settings::getMainWindowGeometry() const {
+    return mMainWindowGeometry;
+}
+
+void Settings::saveRSSWebViewDialogGeometry(const QByteArray& geometry) {
+    mRSSWebViewDialogGeometry = geometry;
+
+    QSettings settings;
+    settings.setValue(SETTINGS_RSS_WEB_VIEW_DIALOG_GEOMETRY, mRSSWebViewDialogGeometry);
+    settings.sync();
+}
+
+QByteArray Settings::getRSSWebViewDialogGeometry() const {
+    return mRSSWebViewDialogGeometry;
+}
+
+int Settings::minMaxValue(int min, int max, int value) {
+    return value < min ? min : (value > max ? max : value);
 }

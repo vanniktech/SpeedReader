@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -39,125 +39,157 @@
        <number>0</number>
       </property>
       <widget class="QWidget" name="startPage">
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
+       <layout class="QHBoxLayout" name="startPageLayout" stretch="1,2">
         <item>
-         <widget class="QWidget" name="pasteWidget" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout">
-           <item>
-            <widget class="QPlainTextEdit" name="plainTextEdit"/>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="buttonLayout">
-             <property name="sizeConstraint">
-              <enum>QLayout::SetDefaultConstraint</enum>
-             </property>
-             <property name="alignment">
-               <set>Qt::AlignLeft</set>
-             </property>
-             <item>
-              <widget class="QPushButton" name="readButton">
-               <property name="text">
-                <string>Read</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QPushButton" name="goButton">
-               <property name="text">
-                <string>Go</string>
-               </property>
-              </widget>
-             </item>
-             <item>
-              <widget class="QCheckBox" name="showRSSCheckBox">
-               <property name="text">
-                <string>Show RSS feeds</string>
-               </property>
-              </widget>
-             </item>
-            </layout>
-           </item>
-           <item>
-            <widget class="QLabel" name="donateLabel">
-             <property name="text">
-              <string>Donate</string>
-             </property>
-             <property name="textFormat">
-              <enum>Qt::RichText</enum>
-             </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-             <property name="openExternalLinks">
-              <bool>true</bool>
+         <layout class="QHBoxLayout" name="startPageWidget">
+          <item>
+           <widget class="QScrollArea" name="navigationDrawerScrollArea">
+            <property name="widgetResizable">
+             <bool>true</bool>
+            </property>
+            <widget class="QWidget" name="navigationDrawerScrollAreaWidget">
+             <property name="geometry">
+              <rect>
+               <x>0</x>
+               <y>0</y>
+               <width>120</width>
+               <height>449</height>
+              </rect>
              </property>
             </widget>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QWidget" name="rssWidget" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_3">
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="pasteWidget" native="true">
+            <layout class="QVBoxLayout" name="pasteWidgetLayout">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
              <item>
-              <widget class="QLineEdit" name="addRSSUrlLineEdit">
-               <property name="placeholderText">
-                <string>http://server.com/rss</string>
+              <widget class="QPlainTextEdit" name="plainTextEdit">
+               <property name="placeholderText" stdset="0">
+                <string>Type or paste your text here to SpeedRead it</string>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="addRSSUrlButton">
+              <layout class="QHBoxLayout" name="buttonLayout">
+               <property name="sizeConstraint">
+                <enum>QLayout::SetDefaultConstraint</enum>
+               </property>
+               <item>
+                <widget class="QPushButton" name="speedreadButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shortcut: S&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>SpeedRead</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="QPushButton" name="continueButton">
+                 <property name="toolTip">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shortcut: C&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="text">
+                  <string>Continue</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item>
+              <widget class="QLabel" name="googlePlayStoreLabel">
                <property name="text">
-                <string>Add</string>
+                <string>Google Play Store</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+               <property name="openExternalLinks">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
              <item>
-              <widget class="QPushButton" name="refreshAllButton">
+              <widget class="QLabel" name="donateLabel">
                <property name="text">
-                <string>All</string>
+                <string>Donate</string>
                </property>
-               <property name="icon">
-                <iconset resource="resources.qrc">
-                 <normaloff>:/images/refresh.png</normaloff>:/images/refresh.png</iconset>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+               <property name="openExternalLinks">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
             </layout>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="checkBoxRSSLayout">
-              <property name="alignment">
-                <set>Qt::AlignLeft</set>
-              </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="rssWidget" native="true">
+            <layout class="QVBoxLayout" name="rssWidgetLayout">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QListWidget" name="rssListWidget">
+               <property name="iconSize">
+                <size>
+                 <width>80</width>
+                 <height>80</height>
+                </size>
+               </property>
+               <property name="wordWrap">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
             </layout>
-           </item>
-           <item>
-            <widget class="QListWidget" name="rssListWidget">
-             <property name="iconSize">
-              <size>
-               <width>80</width>
-               <height>80</height>
-              </size>
+           </widget>
+          </item>
+          <item>
+           <widget class="QWidget" name="statusWidget" native="true">
+            <layout class="QVBoxLayout" name="statusWidgetLayout">
+             <property name="topMargin">
+              <number>0</number>
              </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-            </widget>
-           </item>
-          </layout>
-         </widget>
+             <item>
+              <widget class="QLabel" name="segmentsStatusLabel"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="stopWordsStatusLabel"/>
+             </item>
+             <item>
+              <widget class="QLabel" name="estimatedRemainingSpeedReadingTimeLabel"/>
+             </item>
+             <item>
+              <widget class="QTextEdit" name="textEdit">
+               <property name="readOnly">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
         </item>
        </layout>
       </widget>
-      <widget class="QWidget" name="readPage">
-       <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <widget class="QWidget" name="speedreadPage">
+       <layout class="QHBoxLayout" name="speedreadPageLayout">
         <item>
-         <widget class="QWidget" name="readWidget" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout_4">
+         <widget class="QWidget" name="speedreadWidget" native="true">
+          <layout class="QVBoxLayout" name="speedreadWidgetLayout">
            <item>
             <widget class="QProgressBar" name="progressBar">
              <property name="value">
@@ -170,65 +202,31 @@
              <property name="text">
               <string/>
              </property>
-             <property name="alignment">
-              <set>Qt::AlignCenter</set>
-             </property>
             </widget>
            </item>
            <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_4">
-             <property name="alignment">
-               <set>Qt::AlignLeft</set>
-             </property>
+            <layout class="QHBoxLayout" name="stopCancelButtonLayout">
              <item>
-              <widget class="QPushButton" name="startStopButton">
+              <widget class="QPushButton" name="stopButton">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shortcut: S&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
-                <string>Start</string>
+                <string>Stop</string>
                </property>
               </widget>
              </item>
              <item>
               <widget class="QPushButton" name="cancelButton">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Shortcut: C&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
                <property name="text">
                 <string>Cancel</string>
                </property>
               </widget>
              </item>
             </layout>
-           </item>
-          </layout>
-         </widget>
-        </item>
-        <item>
-         <widget class="QWidget" name="statusWidget" native="true">
-          <layout class="QVBoxLayout" name="verticalLayout_3">
-           <item>
-            <widget class="QLabel" name="segmentsStatusLabel">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="stopWordsStatusLabel">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="estimatedRemainingReadingTimeLabel">
-             <property name="text">
-              <string/>
-             </property>
-            </widget>
-           </item>
-           <item>
-            <widget class="QTextEdit" name="textEdit">
-             <property name="readOnly">
-              <bool>true</bool>
-             </property>
-            </widget>
            </item>
           </layout>
          </widget>

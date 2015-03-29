@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -17,21 +17,38 @@
     along with SpeedReader. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#ifndef WORD_H
-#define WORD_H
+#ifndef RSSWEBVIEWDIALOG_H
+#define RSSWEBVIEWDIALOG_H
 
-#include <QString>
+#include <QDialog>
 
-class Word {
+namespace Ui {
+    class RSSWebViewDialog;
+}
+
+class RSSWebViewDialog : public QDialog {
+    Q_OBJECT
+
+signals:
+    void speedreadSelectedText(QString text);
+    void closed();
+
 public:
-    Word();
-    Word(QString word, bool stopWord, bool breakWord, int delayWord);
-    bool equals(Word word);
+    explicit RSSWebViewDialog(QWidget *parent = 0);
+    ~RSSWebViewDialog();
 
-    QString word;
-    bool stopWord;
-    bool breakWord;
-    int delayWord;
+    void retranslate();
+    void load(QUrl url);
+
+protected:
+    void closeEvent(QCloseEvent *event);
+
+private slots:
+    void on_speedreadPushButton_clicked();
+    void on_reloadButton_clicked();
+
+private:
+    Ui::RSSWebViewDialog *mUI;
 };
 
-#endif // WORD_H
+#endif // RSSWEBVIEWDIALOG_H

@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of VNTRSSReader.
 
@@ -20,20 +20,36 @@
 #ifndef VNTRSSCOMMON_H
 #define VNTRSSCOMMON_H
 
+#include <QObject>
 #include <QString>
 #include <QImage>
 #include <QUrl>
+#include <QDateTime>
 
-class VNTRSSCommon {
+class VNTRSSCommon : public QObject {
+    Q_OBJECT
+
 public:
-    VNTRSSCommon(QString title, QString description, QString pubDate, QUrl link, QUrl imageUrl);
+    VNTRSSCommon();
 
+    Q_INVOKABLE void setTitle(const QString &title);
     QString getTitle() const;
+    QString getPlainTitle() const;
+
+    Q_INVOKABLE void setDescription(const QString &description);
     QString getDescription() const;
-    QString getPlainDescription();
-    QString getPubDate() const;
+    QString getPlainDescription() const;
+
+    Q_INVOKABLE void setPubDate(const QString &pubDate);
+    QDateTime getDate() const;
+
+    Q_INVOKABLE void setLink(const QString &link);
     QUrl getLink() const;
+
+    Q_INVOKABLE void setImageUrl(const QString &imageUrl);
     QUrl getImageUrl() const;
+
+    QString getImageFileType() const;
     QImage getImage() const;
     void setImage(const QImage &value);
 
@@ -41,11 +57,16 @@ public:
 
 protected:
     QString mTitle;
+    QString mPlainTitle;
     QString mDescription;
-    QString mPubDate;
+    QString mPlainDescription;
+    QDateTime mPubDate;
     QUrl    mLink;
     QUrl    mImageUrl;
+    QString mImageFileType;
     QImage  mImage;
+
+    void updateImageFileType();
 };
 
 #endif // VNTRSSCOMMON_H

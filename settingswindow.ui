@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of SpeedReader.
 
@@ -37,7 +37,7 @@
      <property name="currentIndex">
       <number>0</number>
      </property>
-     <widget class="QWidget" name="tabReadingSettings">
+     <widget class="QWidget" name="tabSpeedReadingSettings">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>0</horstretch>
@@ -45,7 +45,7 @@
        </sizepolicy>
       </property>
       <attribute name="title">
-       <string>Reading</string>
+       <string>SpeedReading</string>
       </attribute>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <property name="leftMargin">
@@ -61,322 +61,230 @@
         <number>10</number>
        </property>
        <item>
-        <layout class="QFormLayout" name="speedFormLayout">
-         <property name="fieldGrowthPolicy">
-          <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+        <widget class="QGroupBox" name="speedGroupBox">
+         <property name="title">
+          <string>Speed</string>
          </property>
-         <property name="labelAlignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-         </property>
-         <property name="formAlignment">
-          <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
-         </property>
-         <property name="leftMargin">
-          <number>0</number>
-         </property>
-         <property name="topMargin">
-          <number>0</number>
-         </property>
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item row="3" column="0">
-          <widget class="QCheckBox" name="numberGroupingCheckBox">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If selected it tries not to split numbers, such as &quot;10 000&quot; into &quot;10&quot; and &quot;000&quot;. It'll remain as &quot;10 000&quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Number grouping</string>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="0">
-          <widget class="QCheckBox" name="stallAtIndentionsCheckBox">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If an indention occurs, the reading will be stalled for a moment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Stall at indentions</string>
-           </property>
-          </widget>
-         </item>
-         <item row="6" column="0">
-          <widget class="QCheckBox" name="displayLongerWordsCheckBox">
-           <property name="text">
-            <string>Display longer words longer</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="0">
-          <widget class="QLabel" name="wordLengthLabel">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Words longer than the given length, will be displayed longer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Word length:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="7" column="1">
-          <widget class="QSpinBox" name="wordLengthSpinBox">
-           <property name="minimum">
-            <number>5</number>
-           </property>
-           <property name="maximum">
-            <number>20</number>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="0">
-          <widget class="QLabel" name="speedLabel">
-           <property name="font">
-            <font>
-             <pointsize>16</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-             <underline>true</underline>
-            </font>
-           </property>
-           <property name="text">
-            <string>Speed:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="wordsPerMinuteLabel">
-           <property name="text">
-            <string>Words per minute:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QSpinBox" name="wordsPerMinuteSpinBox">
-           <property name="minimum">
-            <number>300</number>
-           </property>
-           <property name="maximum">
-            <number>3000</number>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="numberOfWordsLabel">
-           <property name="text">
-            <string>Number of Words:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QSpinBox" name="numberOfWordsSpinBox">
-           <property name="minimum">
-            <number>1</number>
-           </property>
-           <property name="maximum">
-            <number>10</number>
-           </property>
-          </widget>
-         </item>
-        </layout>
+         <layout class="QFormLayout" name="formLayout_3">
+          <item row="0" column="0">
+           <widget class="QLabel" name="numberOfWordsLabel">
+            <property name="text">
+             <string>Number of Words:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="numberOfWordsSpinBox"/>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="wordsPerMinuteLabel">
+            <property name="text">
+             <string>Words per minute:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="numberGroupingCheckBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If selected it tries not to split numbers, such as &quot;10 000&quot; into &quot;10&quot; and &quot;000&quot;. It'll remain as &quot;10 000&quot;.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Number grouping</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QCheckBox" name="stallAtIndentionsCheckBox">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If an indention occurs, the SpeedReading will be stalled for a moment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Stall at indentions</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QCheckBox" name="displayLongerWordsCheckBox">
+            <property name="text">
+             <string>Display longer words longer</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="wordsPerMinuteSpinBox"/>
+          </item>
+          <item row="5" column="0">
+           <widget class="QLabel" name="wordLengthLabel">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Words longer than the given length, will be displayed longer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Word length:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="5" column="1">
+           <widget class="QSpinBox" name="wordLengthSpinBox"/>
+          </item>
+         </layout>
+        </widget>
        </item>
        <item>
-        <layout class="QGridLayout" name="appearanceGridLayout">
-         <item row="0" column="0" colspan="3">
-          <widget class="QLabel" name="appearanceLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>16</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-             <underline>true</underline>
-            </font>
-           </property>
-           <property name="text">
-            <string>Appearance:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="fontFamilyLabel">
-           <property name="text">
-            <string>Font Family:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QComboBox" name="fontFamilyComboBox"/>
-         </item>
-         <item row="4" column="2">
-          <widget class="QPushButton" name="changeTextBackgroundColorPushButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Change</string>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QSpinBox" name="fontSizeSpinBox">
-           <property name="minimum">
-            <number>8</number>
-           </property>
-           <property name="maximum">
-            <number>100</number>
-           </property>
-           <property name="value">
-            <number>16</number>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="fontSizeLabel">
-           <property name="text">
-            <string>Font size:</string>
-           </property>
-           <property name="alignment">
-            <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="textColorLabel">
-           <property name="text">
-            <string>Text color:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="2">
-          <widget class="QPushButton" name="changeTextColorPushButton">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>Change</string>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="0">
-          <widget class="QLabel" name="textBackgroundColorLabel">
-           <property name="text">
-            <string>Text background color:</string>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QFrame" name="textColorFrame">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="4" column="1">
-          <widget class="QFrame" name="textBackgroundColorFrame">
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>20</height>
-            </size>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::StyledPanel</enum>
-           </property>
-           <property name="frameShadow">
-            <enum>QFrame::Raised</enum>
-           </property>
-          </widget>
-         </item>
-         <item row="5" column="1">
-          <spacer name="appearanceSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item>
-        <layout class="QVBoxLayout" name="verticalLayout">
-         <item>
-          <widget class="QLabel" name="extrasLabel">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="font">
-            <font>
-             <pointsize>16</pointsize>
-             <weight>75</weight>
-             <bold>true</bold>
-             <underline>true</underline>
-            </font>
-           </property>
-           <property name="text">
-            <string>Extras:</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QCheckBox" name="jumpBackToStartCheckBox">
-           <property name="toolTip">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;If this is enabled and you have finished reading your text, it will jump back to the start screen.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-           </property>
-           <property name="text">
-            <string>Jump back to start</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="extrasSpacer">
-           <property name="orientation">
-            <enum>Qt::Vertical</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>20</width>
-             <height>40</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
+        <widget class="QGroupBox" name="appearanceGroupBox">
+         <property name="title">
+          <string>Appearance</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_2">
+          <item row="1" column="0">
+           <widget class="QLabel" name="fontFamilyLabel">
+            <property name="text">
+             <string>Font Family:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="2">
+           <widget class="QPushButton" name="changeTextBackgroundColorPushButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Change</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="fontSizeSpinBox">
+            <property name="value">
+             <number>16</number>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="2">
+           <widget class="QPushButton" name="changeTextColorPushButton">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Change</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QFrame" name="linesColorFrame">
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QFrame" name="textBackgroundColorFrame">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="textBackgroundColorLabel">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Background color of the area around the displayed text&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Text background color:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QLabel" name="textColorLabel">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Color of the displayed text&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Text color:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="linesColorLabel">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Color of the lines, which will be atop and below the displayed text&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Lines color:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="QComboBox" name="fontFamilyComboBox"/>
+          </item>
+          <item row="5" column="1">
+           <spacer name="appearanceSpacer">
+            <property name="orientation">
+             <enum>Qt::Vertical</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>20</width>
+              <height>40</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="4" column="2">
+           <widget class="QPushButton" name="changeLinesColorPushButton">
+            <property name="text">
+             <string>Change</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="fontSizeLabel">
+            <property name="text">
+             <string>Font size:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1">
+           <widget class="QFrame" name="textColorFrame">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="frameShape">
+             <enum>QFrame::StyledPanel</enum>
+            </property>
+            <property name="frameShadow">
+             <enum>QFrame::Raised</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
        </item>
       </layout>
      </widget>
@@ -400,16 +308,6 @@
        <property name="bottomMargin">
         <number>10</number>
        </property>
-       <item row="1" column="0">
-        <widget class="QLineEdit" name="wordLineEdit"/>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPushButton" name="wordAddButton">
-         <property name="text">
-          <string>Add</string>
-         </property>
-        </widget>
-       </item>
        <item row="0" column="0">
         <widget class="QTableWidget" name="wordsTableWidget">
          <property name="sizePolicy">
@@ -428,7 +326,7 @@
            <string>Stopword</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;It is a word, where the reading stops and you can review your stuff, which you have already read and what is going to come.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;It is a word, where the SpeedReading stops and you can review your stuff, which you have already speedread and what is going to come.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -436,7 +334,7 @@
            <string>Breakword</string>
           </property>
           <property name="toolTip">
-           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;It is a word, where it will only display the unread words before the particularly word and the breakword.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;It is a word, where it will only display the unspeedread words before the particularly word and the breakword.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
           </property>
          </column>
          <column>
@@ -449,12 +347,46 @@
          </column>
         </widget>
        </item>
-       <item row="0" column="1" alignment="Qt::AlignTop">
-        <widget class="QPushButton" name="wordRemoveButton">
+       <item row="2" column="0">
+        <widget class="QLineEdit" name="wordLineEdit"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QPushButton" name="wordAddButton">
          <property name="text">
-          <string>Remove</string>
+          <string>Add</string>
          </property>
         </widget>
+       </item>
+       <item row="0" column="1">
+        <layout class="QVBoxLayout" name="wordDeleteButtons">
+         <item>
+          <widget class="QPushButton" name="wordDeleteButton">
+           <property name="text">
+            <string>Delete</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="wordDeleteAllButton">
+           <property name="text">
+            <string>Delete all</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="wordDeleteButtonsVerticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
       </layout>
      </widget>
@@ -475,44 +407,129 @@
        <property name="bottomMargin">
         <number>10</number>
        </property>
-       <item row="3" column="1">
-        <widget class="QPushButton" name="rssUrlAddButton">
-         <property name="text">
-          <string>Add</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLineEdit" name="rssUrlLineEdit">
-         <property name="text">
-          <string/>
-         </property>
-         <property name="placeholderText">
-          <string>http://server.com/rss</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1" alignment="Qt::AlignTop">
-        <widget class="QPushButton" name="rssUrlRemoveButton">
-         <property name="text">
-          <string>Remove</string>
-         </property>
-        </widget>
-       </item>
        <item row="1" column="0">
-        <widget class="QListWidget" name="rssListWidget">
+        <layout class="QGridLayout" name="groupBoxesGridLayout">
+         <item row="1" column="0">
+          <widget class="QGroupBox" name="rssSettingsGroupBox">
+           <property name="title">
+            <string>RSS settings</string>
+           </property>
+           <layout class="QFormLayout" name="formLayout_2">
+            <property name="fieldGrowthPolicy">
+             <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+            </property>
+            <item row="1" column="0">
+             <widget class="QPushButton" name="deleteCachePushButton">
+              <property name="text">
+               <string>Delete cache</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLabel" name="rssRefreshRateLabel">
+              <property name="text">
+               <string>RSS refresh rate</string>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="1">
+             <widget class="QComboBox" name="rssRefreshRateComboBox"/>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <spacer name="groupBoxesGridLayoutVerticalSpacer">
+           <property name="orientation">
+            <enum>Qt::Vertical</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>20</width>
+             <height>40</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+         <item row="0" column="1" rowspan="3">
+          <widget class="QGroupBox" name="rssSiteListGroupBox">
+           <property name="title">
+            <string>RSS sites</string>
+           </property>
+           <layout class="QGridLayout" name="rssSiteGridLayout">
+            <item row="0" column="1">
+             <widget class="QPushButton" name="rssSiteAddButton">
+              <property name="text">
+               <string>Add</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="0">
+             <widget class="QListWidget" name="rssSiteListWidget">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+             </widget>
+            </item>
+            <item row="0" column="0">
+             <widget class="QLineEdit" name="rssSiteLineEdit">
+              <property name="text">
+               <string/>
+              </property>
+              <property name="placeholderText">
+               <string>http://server.com/rss</string>
+              </property>
+             </widget>
+            </item>
+            <item row="1" column="1">
+             <layout class="QVBoxLayout" name="rssSiteDeleteButtons">
+              <item>
+               <widget class="QPushButton" name="rssSiteDeleteButton">
+                <property name="text">
+                 <string>Delete</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QPushButton" name="rssSiteDeleteAllButton">
+                <property name="text">
+                 <string>Delete all</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="rssSiteDeleteButtonsVerticalSpacer">
+                <property name="orientation">
+                 <enum>Qt::Vertical</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>20</width>
+                  <height>40</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="0" column="0">
+        <widget class="QLabel" name="rssInformationLabel">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="2">
-        <widget class="QLabel" name="label">
          <property name="text">
-          <string>Information: So far only RSS version 2.0 is supported by this version of your SpeedReader. Please make sure, that you use a correct link.</string>
+          <string>Information: RSS (version 0.91, 1.0 and 2.0) and Atom (version 1.0) are supported by this version of your SpeedReader. Please make sure, that you use a correct link.</string>
          </property>
          <property name="wordWrap">
           <bool>true</bool>
@@ -536,60 +553,54 @@
         <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
        </property>
        <item row="0" column="0">
-        <widget class="QLabel" name="httpNetworkProxyLabel">
-         <property name="font">
-          <font>
-           <pointsize>16</pointsize>
-           <weight>75</weight>
-           <bold>true</bold>
-           <underline>true</underline>
-          </font>
+        <widget class="QGroupBox" name="httpProxyGroupBox">
+         <property name="title">
+          <string>HTTP Proxy</string>
          </property>
-         <property name="text">
-          <string>HTTP Proxy:</string>
-         </property>
+         <layout class="QFormLayout" name="formLayout_4">
+          <item row="0" column="0">
+           <widget class="QRadioButton" name="radioButtonNoHTTPNetworkProxy">
+            <property name="text">
+             <string>No HTTP proxy</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QRadioButton" name="radioButtonUseSystemHTTPNetworkProxyConfiguration">
+            <property name="text">
+             <string>Use system HTTP proxy configuration</string>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="0">
+           <widget class="QRadioButton" name="radioButtonCustomHTTPNetworkProxy">
+            <property name="text">
+             <string>Custom HTTP proxy</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="0">
+           <widget class="QLabel" name="httpNetworkProxyServerLabel">
+            <property name="text">
+             <string>HTTP proxy server:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="3" column="1">
+           <widget class="QLineEdit" name="httpNetworkProxyServerLineEdit"/>
+          </item>
+          <item row="4" column="0">
+           <widget class="QLabel" name="httpNetworkProxyPortLabel">
+            <property name="text">
+             <string>HTTP proxy port:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QLineEdit" name="httpNetworkProxyPortLineEdit"/>
+          </item>
+         </layout>
         </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QRadioButton" name="radioButtonNoHTTPNetworkProxy">
-         <property name="text">
-          <string>No HTTP proxy</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QRadioButton" name="radioButtonUseSystemHTTPNetworkProxyConfiguration">
-         <property name="text">
-          <string>Use system HTTP proxy configuration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QRadioButton" name="radioButtonCustomHTTPNetworkProxy">
-         <property name="text">
-          <string>Custom HTTP proxy</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="httpNetworkProxyServerLabel">
-         <property name="text">
-          <string>HTTP proxy server:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <widget class="QLineEdit" name="httpNetworkProxyServerLineEdit"/>
-       </item>
-       <item row="5" column="0">
-        <widget class="QLabel" name="httpNetworkProxyPortLabel">
-         <property name="text">
-          <string>HTTP proxy port:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="1">
-        <widget class="QLineEdit" name="httpNetworkProxyPortLineEdit"/>
        </item>
       </layout>
      </widget>
@@ -597,6 +608,32 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>tabWidget</tabstop>
+  <tabstop>numberOfWordsSpinBox</tabstop>
+  <tabstop>wordsPerMinuteSpinBox</tabstop>
+  <tabstop>numberGroupingCheckBox</tabstop>
+  <tabstop>stallAtIndentionsCheckBox</tabstop>
+  <tabstop>displayLongerWordsCheckBox</tabstop>
+  <tabstop>wordLengthSpinBox</tabstop>
+  <tabstop>fontSizeSpinBox</tabstop>
+  <tabstop>fontFamilyComboBox</tabstop>
+  <tabstop>changeTextColorPushButton</tabstop>
+  <tabstop>changeTextBackgroundColorPushButton</tabstop>
+  <tabstop>changeLinesColorPushButton</tabstop>
+  <tabstop>wordsTableWidget</tabstop>
+  <tabstop>wordLineEdit</tabstop>
+  <tabstop>wordAddButton</tabstop>
+  <tabstop>rssRefreshRateComboBox</tabstop>
+  <tabstop>deleteCachePushButton</tabstop>
+  <tabstop>rssSiteLineEdit</tabstop>
+  <tabstop>rssSiteAddButton</tabstop>
+  <tabstop>radioButtonNoHTTPNetworkProxy</tabstop>
+  <tabstop>radioButtonUseSystemHTTPNetworkProxyConfiguration</tabstop>
+  <tabstop>radioButtonCustomHTTPNetworkProxy</tabstop>
+  <tabstop>httpNetworkProxyServerLineEdit</tabstop>
+  <tabstop>httpNetworkProxyPortLineEdit</tabstop>
+ </tabstops>
  <resources/>
  <connections/>
 </ui>

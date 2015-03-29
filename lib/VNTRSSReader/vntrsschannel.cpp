@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of VNTRSSReader.
 
@@ -19,42 +19,58 @@
 
 #include "vntrsschannel.h"
 
-VNTRSSChannel::VNTRSSChannel(QString link, QString title, QString description, QString pubdate, QString language, QString copyright, QString imageUrl, QUrl rssUrl, QString errorMessage, QList<VNTRSSItem*> items) : VNTRSSCommon(title, description, pubdate, link, imageUrl) {
-    mLanguage = language.simplified();
-    mCopyright = copyright.simplified();
-    mRSSUrl = rssUrl;
-    mErrorMessage = errorMessage;
-    mItems = items;
+VNTRSSChannel::VNTRSSChannel() : VNTRSSCommon() {
+
 }
 
 VNTRSSChannel::~VNTRSSChannel() {
-    foreach (VNTRSSItem* item, mItems) delete item;
+    qDeleteAll(mItems.begin(), mItems.end());
 }
+
+void VNTRSSChannel::setLanguage(const QString &language) {
+    mLanguage = language.simplified();
+ }
 
 QString VNTRSSChannel::getLanguage() const {
     return mLanguage;
+}
+
+void VNTRSSChannel::setCopyright(const QString &copyright) {
+    mCopyright = copyright.simplified();
 }
 
 QString VNTRSSChannel::getCopyright() const {
     return mCopyright;
 }
 
-QUrl    VNTRSSChannel::getRSSUrl() const {
-    return mRSSUrl;
+void VNTRSSChannel::setRSSSite(QUrl rssSite) {
+    mRSSSite = rssSite;
+}
+
+QUrl VNTRSSChannel::getRSSSite() const {
+    return mRSSSite;
+}
+
+void VNTRSSChannel::setErrorMessage(const QString &errorMessage) {
+    mErrorMessage = errorMessage;
 }
 
 QString VNTRSSChannel::getErrorMessage() const {
     return mErrorMessage;
 }
 
-bool    VNTRSSChannel::hasError() const {
+bool VNTRSSChannel::hasError() const {
     return !mErrorMessage.isEmpty();
 }
 
-QList<VNTRSSItem*> VNTRSSChannel::getItems() const {
+void VNTRSSChannel::addItem(VNTRSSItem* item) {
+    mItems.append(item);
+}
+
+QList<VNTRSSItem*> VNTRSSChannel::getRSSItems() const {
     return mItems;
 }
 
 QString VNTRSSChannel::toString() const {
-    return VNTRSSCommon::toString().append(QString("language=%1\ncopyright=%2\nrssurl=%3\nerrormessage=%4").arg(mLanguage, mCopyright, mRSSUrl.toString(), mErrorMessage));
+    return VNTRSSCommon::toString().append(QString("\nlanguage=%1\ncopyright=%2\nrssurl=%3\nerrormessage=%4").arg(mLanguage, mCopyright, mRSSSite.toString(), mErrorMessage));
 }

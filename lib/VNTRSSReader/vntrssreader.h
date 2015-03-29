@@ -1,5 +1,5 @@
 /*
-    Copyright 2014 Vanniktech - Niklas Baudy
+    Copyright 2014-2015 Vanniktech - Niklas Baudy
 
     This file is part of VNTRSSReader.
 
@@ -26,6 +26,8 @@
 
 #include <QUrl>
 #include <QList>
+#include <QLinkedList>
+#include <QXmlStreamReader>
 
 #include "vntrsschannel.h"
 
@@ -36,26 +38,32 @@ public:
     explicit VNTRSSReader(QObject *parent = 0);
     ~VNTRSSReader();
 
-    void load(QUrl url);
-    void load(QUrl url, bool loadImages);
-    void load(QList<QUrl> urls);
-    void load(QList<QUrl> urls, bool loadImages);
+    void load(const QUrl &url);
+    void load(const QUrl &url, const bool &loadImages);
+    void load(const QList<QUrl> &urls);
+    void load(const QList<QUrl> &urls, const bool &loadImages);
 
+    VNTRSSChannel* parseData(const QString &origin, const QByteArray &data) const;
 private slots:
     void replyFinished(QNetworkReply* networkReply);
     void replyFinishedImages(QNetworkReply* networkReply);
 
 private:
+    void redirect(const QUrl &url);
     void fireEmitIfDone();
     void loadImage(VNTRSSCommon* common);
 
     QMultiMap<QUrl, VNTRSSCommon*> mUrlItemMultiMap;
     QList<VNTRSSChannel*> mRSSChannels;
+    QList<QLinkedList<QUrl>* > mRedirectUrls;
+
     bool mLoadImages;
+    int mMissingChannels;
 
     QNetworkAccessManager* mNetworkAccessManager;
     QNetworkAccessManager* mNetworkAccessManagerImages;
 
+    void addInitialInputRSSUrlToRedirects(const QUrl &url);
 signals:
     void loadedRSS(QList<VNTRSSChannel*> rssChannels);
 };

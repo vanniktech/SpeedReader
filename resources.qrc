@@ -2,9 +2,15 @@
     <qresource prefix="/">
         <file>languages/de.qm</file>
         <file>languages/en.qm</file>
+        <file>languages/cs.qm</file>
         <file>languages/de.png</file>
         <file>languages/en.png</file>
+        <file>languages/cs.png</file>
         <file>icon.png</file>
         <file>images/refresh.png</file>
+        <file>images/refresh.gif</file>
+        <file>images/add.png</file>
+        <file>images/dot_red.png</file>
+        <file>images/dot_green.png</file>
     </qresource>
 </RCC>
