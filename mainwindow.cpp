@@ -274,11 +274,11 @@ void MainWindow::on_actionDonate_triggered() {
 }
 
 void MainWindow::on_actionReportABug_triggered() {
-    QDesktopServices::openUrl(QUrl("mailto:info@vanniktech.de?subject=[Bug report] - SpeedReader (" + OS + ")"));
+    QDesktopServices::openUrl(QUrl("mailto:niklas.baudy@vanniktech.de?subject=[Bug report] - SpeedReader (" + OS + ")"));
 }
 
 void MainWindow::on_actionSendFeedback_triggered() {
-    QDesktopServices::openUrl(QUrl("mailto:info@vanniktech.de?subject=[Feedback] - SpeedReader (" + OS + ")"));
+    QDesktopServices::openUrl(QUrl("mailto:niklas.baudy@vanniktech.de?subject=[Feedback] - SpeedReader (" + OS + ")"));
 }
 
 void MainWindow::on_actionSpeedReader_triggered() {
